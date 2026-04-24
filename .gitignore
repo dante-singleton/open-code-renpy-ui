@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+coverage/
+.turbo/
+
+# Tauri
+**/src-tauri/target/
+**/src-tauri/gen/schemas/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.log
+*.swp
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Project lock (runtime only)
+.renpy-ui.lock

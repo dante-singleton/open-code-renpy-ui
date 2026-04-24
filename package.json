@@ -1,0 +1,32 @@
+{
+  "name": "open-code-renpy-ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Spec-driven, node-based visual editor for Ren'Py visual novels.",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:desktop": "pnpm --filter @renpy-ui/desktop dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "turbo run test",
+    "tauri": "pnpm --filter @renpy-ui/desktop tauri",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "rimraf": "6.0.1",
+    "turbo": "2.3.3",
+    "typescript": "5.7.2"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+  }
+}

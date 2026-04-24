@@ -1,0 +1,42 @@
+{
+  "name": "@renpy-ui/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "clean": "rimraf dist .turbo src-tauri/target"
+  },
+  "dependencies": {
+    "@renpy-ui/graph": "workspace:*",
+    "@renpy-ui/preview": "workspace:*",
+    "@renpy-ui/spec": "workspace:*",
+    "@renpy-ui/ui": "workspace:*",
+    "@tauri-apps/api": "2.1.1",
+    "@tauri-apps/plugin-fs": "2.2.0",
+    "@xyflow/react": "12.3.6",
+    "immer": "10.1.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "5.0.2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.1.0",
+    "@types/node": "22.10.2",
+    "@types/react": "18.3.17",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "rimraf": "6.0.1",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.7.2",
+    "vite": "6.0.5"
+  }
+}
