@@ -1,0 +1,50 @@
+{
+  "$ref": "#/definitions/variables",
+  "definitions": {
+    "variables": {
+      "type": "object",
+      "properties": {
+        "specVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["bool", "int", "float", "string", "list", "dict", "python"]
+              },
+              "default": {
+                "type": "string"
+              },
+              "persistent": {
+                "type": "boolean",
+                "default": false
+              },
+              "doc": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "kind", "default"],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": ["specVersion"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2019-09/schema#"
+}

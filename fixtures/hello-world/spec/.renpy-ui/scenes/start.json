@@ -1,0 +1,53 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_START",
+  "label": "start",
+  "title": "Start",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_say",
+      "type": "say",
+      "position": { "x": 200, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "expressionName": "happy",
+      "text": "Hello, world!"
+    },
+    {
+      "id": "n_menu",
+      "type": "menu",
+      "position": { "x": 400, "y": 0 },
+      "prompt": "How do you respond?",
+      "choices": [
+        { "id": "c_warm", "text": "\"Hi, Alice!\"" },
+        { "id": "c_grunt", "text": "\"...hnngh.\"" }
+      ]
+    },
+    {
+      "id": "n_set",
+      "type": "setVar",
+      "position": { "x": 600, "y": -40 },
+      "variable": "greeted",
+      "expression": "True"
+    },
+    { "id": "n_end", "type": "end", "position": { "x": 800, "y": 0 } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_say" },
+    { "id": "e2", "source": "n_say", "target": "n_menu" },
+    {
+      "id": "e3",
+      "source": "n_menu",
+      "sourceHandle": "choice:c_warm",
+      "target": "n_set"
+    },
+    {
+      "id": "e4",
+      "source": "n_menu",
+      "sourceHandle": "choice:c_grunt",
+      "target": "n_end"
+    },
+    { "id": "e5", "source": "n_set", "target": "n_end" }
+  ]
+}

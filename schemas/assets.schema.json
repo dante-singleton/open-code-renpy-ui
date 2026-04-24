@@ -1,0 +1,61 @@
+{
+  "$ref": "#/definitions/assets",
+  "definitions": {
+    "assets": {
+      "type": "object",
+      "properties": {
+        "specVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["image", "audio", "video", "font", "other"]
+              },
+              "subkind": {
+                "type": "string",
+                "enum": ["background", "sprite", "ui", "music", "sfx", "voice"]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "hash": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "importedAt": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "ref", "kind", "hash", "sizeBytes", "importedAt"],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": ["specVersion"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2019-09/schema#"
+}

@@ -1,0 +1,15 @@
+{
+  "specVersion": "1.0.0",
+  "characters": [
+    {
+      "id": "01HYZCHAR_ALICE",
+      "varName": "alice",
+      "displayName": "Alice",
+      "color": "#FF7A1A",
+      "images": {
+        "tag": "alice",
+        "expressions": [{ "name": "happy", "asset": "images/alice/happy.png" }]
+      }
+    }
+  ]
+}

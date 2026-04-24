@@ -1,19 +1,29 @@
 /**
  * @renpy-ui/spec
  *
- * Source-of-truth types and Zod schemas for the Ren'Py UI spec. See SPEC.md
- * for the conceptual overview and on-disk layout.
- *
- * This is a stub in M0 — full schemas land in M1.
+ * Source-of-truth Zod schemas + TypeScript types for every on-disk spec
+ * document. See SPEC.md.
  */
 
-export const SPEC_VERSION = '1.0.0' as const;
+export * from './primitives';
+export * from './nodes';
+export * from './documents/project';
+export * from './documents/characters';
+export * from './documents/variables';
+export * from './documents/assets';
+export * from './documents/scene';
+export * from './documents/screen';
+export * from './migrations';
 
-export type SpecVersion = typeof SPEC_VERSION;
-
-/** Placeholder types; real Zod schemas ship in M1. */
-export interface ProjectManifestStub {
-  specVersion: SpecVersion;
-  id: string;
-  name: string;
-}
+// Conventional on-disk paths (relative to project root).
+export const SPEC_PATHS = {
+  specDir: '.renpy-ui',
+  generatedDir: 'game/generated',
+  assetsDir: 'game',
+  project: '.renpy-ui/project.json',
+  characters: '.renpy-ui/characters.json',
+  variables: '.renpy-ui/variables.json',
+  assets: '.renpy-ui/assets.json',
+  scenesDir: '.renpy-ui/scenes',
+  screensDir: '.renpy-ui/screens',
+} as const;

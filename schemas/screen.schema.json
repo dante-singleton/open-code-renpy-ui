@@ -1,0 +1,215 @@
+{
+  "$ref": "#/definitions/screen",
+  "definitions": {
+    "screen": {
+      "type": "object",
+      "properties": {
+        "specVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "template": {
+          "type": "string",
+          "enum": ["say", "choice", "mainMenu", "custom"]
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "#/definitions/screen/properties/name"
+              },
+              "default": {
+                "type": "string"
+              }
+            },
+            "required": ["name"],
+            "additionalProperties": false
+          }
+        },
+        "slots": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "frame"
+                  },
+                  "background": {
+                    "type": "string"
+                  },
+                  "padding": {
+                    "type": "number"
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/screen/properties/slots/additionalProperties"
+                    }
+                  },
+                  "style": {
+                    "type": "string"
+                  }
+                },
+                "required": ["kind", "children"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "vbox"
+                  },
+                  "spacing": {
+                    "type": "number"
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/screen/properties/slots/additionalProperties"
+                    }
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "children"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "hbox"
+                  },
+                  "spacing": {
+                    "type": "number"
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/screen/properties/slots/additionalProperties"
+                    }
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "children"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "text"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "text"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "image"
+                  },
+                  "asset": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "xalign": {
+                    "type": "number"
+                  },
+                  "yalign": {
+                    "type": "number"
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "asset"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "button"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "text", "action"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "bar"
+                  },
+                  "value": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/5/properties/action"
+                  },
+                  "range": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/5/properties/action"
+                  },
+                  "style": {
+                    "$ref": "#/definitions/screen/properties/slots/additionalProperties/anyOf/0/properties/style"
+                  }
+                },
+                "required": ["kind", "value", "range"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "default": {}
+        },
+        "raw": {
+          "type": "string"
+        }
+      },
+      "required": ["specVersion", "id", "name", "template"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2019-09/schema#"
+}

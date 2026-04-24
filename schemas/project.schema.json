@@ -1,0 +1,147 @@
+{
+  "$ref": "#/definitions/project",
+  "definitions": {
+    "project": {
+      "type": "object",
+      "properties": {
+        "specVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "renpyPackage": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "version": {
+          "type": "string",
+          "default": "0.0.1"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "startLabel": {
+          "$ref": "#/definitions/project/properties/renpyPackage",
+          "default": "start"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["en"]
+        },
+        "paths": {
+          "type": "object",
+          "properties": {
+            "specDir": {
+              "type": "string",
+              "default": ".renpy-ui"
+            },
+            "generatedDir": {
+              "type": "string",
+              "default": "game/generated"
+            },
+            "assetsDir": {
+              "type": "string",
+              "default": "game"
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "specDir": ".renpy-ui",
+            "generatedDir": "game/generated",
+            "assetsDir": "game"
+          }
+        },
+        "renpy": {
+          "type": "object",
+          "properties": {
+            "minVersion": {
+              "type": "string",
+              "default": "8.2.0"
+            },
+            "buildWindows": {
+              "type": "boolean",
+              "default": true
+            },
+            "buildMac": {
+              "type": "boolean",
+              "default": true
+            },
+            "buildLinux": {
+              "type": "boolean",
+              "default": true
+            },
+            "buildWeb": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "additionalProperties": false,
+          "default": {
+            "minVersion": "8.2.0",
+            "buildWindows": true,
+            "buildMac": true,
+            "buildLinux": true,
+            "buildWeb": false
+          }
+        },
+        "scenes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/project/properties/id"
+              },
+              "label": {
+                "$ref": "#/definitions/project/properties/renpyPackage"
+              },
+              "file": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "label", "file"],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/project/properties/id"
+              },
+              "name": {
+                "$ref": "#/definitions/project/properties/renpyPackage"
+              },
+              "file": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "file"],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": ["specVersion", "id", "name", "renpyPackage"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2019-09/schema#"
+}

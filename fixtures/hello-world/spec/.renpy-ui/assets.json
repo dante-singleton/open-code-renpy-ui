@@ -1,0 +1,15 @@
+{
+  "specVersion": "1.0.0",
+  "assets": [
+    {
+      "id": "01HYZASSET_HAPPY",
+      "ref": "images/alice/happy.png",
+      "kind": "image",
+      "subkind": "sprite",
+      "tags": ["alice", "happy"],
+      "hash": "deadbeef",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

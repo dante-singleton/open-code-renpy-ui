@@ -1,0 +1,12 @@
+{
+  "specVersion": "1.0.0",
+  "variables": [
+    {
+      "id": "01HYZVAR_GREETED",
+      "name": "greeted",
+      "kind": "bool",
+      "default": "False",
+      "persistent": false
+    }
+  ]
+}

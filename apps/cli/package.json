@@ -1,0 +1,27 @@
+{
+  "name": "@renpy-ui/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "renpy-ui": "./src/main.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx src/main.ts generate",
+    "lint-spec": "tsx src/main.ts lint",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@renpy-ui/codegen": "workspace:*",
+    "@renpy-ui/spec": "workspace:*",
+    "@renpy-ui/validators": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "rimraf": "6.0.1",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

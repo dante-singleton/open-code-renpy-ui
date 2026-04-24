@@ -1,0 +1,99 @@
+{
+  "$ref": "#/definitions/characters",
+  "definitions": {
+    "characters": {
+      "type": "object",
+      "properties": {
+        "specVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "characters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "varName": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              },
+              "displayName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+              },
+              "voiceTag": {
+                "$ref": "#/definitions/characters/properties/characters/items/properties/varName"
+              },
+              "images": {
+                "type": "object",
+                "properties": {
+                  "tag": {
+                    "$ref": "#/definitions/characters/properties/characters/items/properties/varName"
+                  },
+                  "expressions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "asset": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["name", "asset"],
+                      "additionalProperties": false
+                    },
+                    "default": []
+                  },
+                  "poses": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "asset": {
+                          "$ref": "#/definitions/characters/properties/characters/items/properties/images/properties/expressions/items/properties/asset"
+                        }
+                      },
+                      "required": ["name", "asset"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              "sayAttributes": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["id", "varName", "displayName", "color", "images"],
+            "additionalProperties": false
+          },
+          "default": []
+        }
+      },
+      "required": ["specVersion"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2019-09/schema#"
+}
