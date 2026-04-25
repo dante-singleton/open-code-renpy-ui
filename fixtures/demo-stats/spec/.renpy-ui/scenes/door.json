@@ -1,0 +1,63 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_DOOR",
+  "label": "door",
+  "title": "The Locked Door",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_if",
+      "type": "if",
+      "position": { "x": 200, "y": 0 },
+      "branches": [
+        { "id": "b_strong", "condition": "strength >= 3" },
+        { "id": "b_loved", "condition": "love_points >= 1" },
+        { "id": "b_else", "condition": "" }
+      ]
+    },
+    {
+      "id": "n_strong_say",
+      "type": "narration",
+      "position": { "x": 400, "y": -120 },
+      "text": "You force the door open."
+    },
+    {
+      "id": "n_strong_dec",
+      "type": "increment",
+      "position": { "x": 600, "y": -120 },
+      "variable": "strength",
+      "delta": -1
+    },
+    {
+      "id": "n_loved_say",
+      "type": "narration",
+      "position": { "x": 400, "y": 0 },
+      "text": "Alice unlocks it for you."
+    },
+    {
+      "id": "n_else_say",
+      "type": "narration",
+      "position": { "x": 400, "y": 120 },
+      "text": "It will not budge."
+    },
+    {
+      "id": "n_python",
+      "type": "python",
+      "position": { "x": 800, "y": 0 },
+      "code": "renpy.notify(\"Door event resolved.\")"
+    },
+    { "id": "n_end", "type": "end", "position": { "x": 1000, "y": 0 } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_if" },
+    { "id": "e2", "source": "n_if", "sourceHandle": "branch:b_strong", "target": "n_strong_say" },
+    { "id": "e3", "source": "n_strong_say", "target": "n_strong_dec" },
+    { "id": "e4", "source": "n_strong_dec", "target": "n_python" },
+    { "id": "e5", "source": "n_if", "sourceHandle": "branch:b_loved", "target": "n_loved_say" },
+    { "id": "e6", "source": "n_loved_say", "target": "n_python" },
+    { "id": "e7", "source": "n_if", "sourceHandle": "branch:b_else", "target": "n_else_say" },
+    { "id": "e8", "source": "n_else_say", "target": "n_python" },
+    { "id": "e9", "source": "n_python", "target": "n_end" }
+  ]
+}

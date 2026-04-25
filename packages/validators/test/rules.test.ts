@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { SpecBundle } from '../src/bundle';
 import {
   checkIfBranchOrder,
+  checkIfTriviality,
   checkLabelReferences,
   checkMenuChoices,
+  checkRelationshipCharacters,
   checkReservedIdentifiers,
   checkSceneTerminals,
   checkUniqueLabels,
+  checkUnreachableNodes,
   checkVariableDeclarations,
   validateBundle,
 } from '../src/rules';
@@ -250,6 +253,126 @@ describe('undeclared variables', () => {
       ],
     });
     expect(checkVariableDeclarations(b).some((x) => x.code === 'UNDECLARED_VARIABLE')).toBe(true);
+  });
+});
+
+describe('unreachable nodes', () => {
+  it('warns when a node has no path back to an entry', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+            // Orphan: not connected to anything.
+            { id: 'n_orphan', type: 'narration', position: { x: 0, y: 0 }, text: 'lonely' },
+          ],
+          edges: [{ id: 'e1', source: 'n_start', target: 'n_end' }],
+        }),
+      ],
+    });
+    const d = checkUnreachableNodes(b);
+    expect(d.some((x) => x.code === 'UNREACHABLE_NODE' && x.location === 'n_orphan')).toBe(true);
+  });
+
+  it('does not warn for nodes reachable through a label', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          entryNodeId: 'n_start',
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_label', type: 'label', position: { x: 0, y: 0 }, name: 'sub' },
+            { id: 'n_say', type: 'narration', position: { x: 0, y: 0 }, text: 'hi' },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          // Walk start -> end, but label -> say is its own subgraph.
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_end' },
+            { id: 'e2', source: 'n_label', target: 'n_say' },
+          ],
+        }),
+      ],
+    });
+    const d = checkUnreachableNodes(b).filter((x) => x.code === 'UNREACHABLE_NODE');
+    // n_say is reachable from the label entry; n_end is reachable from start.
+    // The label node itself is also an entry, so nothing should be flagged.
+    expect(d).toHaveLength(0);
+  });
+});
+
+describe('trivial if', () => {
+  it('reports info for an if node with a single branch', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_if',
+              type: 'if',
+              position: { x: 0, y: 0 },
+              branches: [{ id: 'b1', condition: 'True' }],
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [{ id: 'e1', source: 'n_start', target: 'n_if' }],
+        }),
+      ],
+    });
+    expect(checkIfTriviality(b).some((x) => x.code === 'TRIVIAL_IF')).toBe(true);
+  });
+});
+
+describe('relationship / show / hide character refs', () => {
+  it('errors on an unknown character id', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_rel',
+              type: 'relationshipOp',
+              position: { x: 0, y: 0 },
+              characterId: 'ghost',
+              op: 'add',
+              value: 1,
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_rel' },
+            { id: 'e2', source: 'n_rel', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    expect(checkRelationshipCharacters(b).some((x) => x.code === 'UNKNOWN_CHARACTER')).toBe(true);
+  });
+
+  it('also flags show / hide / say with unknown characters', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_show', type: 'show', position: { x: 0, y: 0 }, characterId: 'ghost' },
+            { id: 'n_hide', type: 'hide', position: { x: 0, y: 0 }, characterId: 'ghost' },
+            { id: 'n_say', type: 'say', position: { x: 0, y: 0 }, characterId: 'ghost', text: '?' },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_show' },
+            { id: 'e2', source: 'n_show', target: 'n_hide' },
+            { id: 'e3', source: 'n_hide', target: 'n_say' },
+            { id: 'e4', source: 'n_say', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    const errors = checkRelationshipCharacters(b).filter((x) => x.code === 'UNKNOWN_CHARACTER');
+    expect(errors).toHaveLength(3);
   });
 });
 

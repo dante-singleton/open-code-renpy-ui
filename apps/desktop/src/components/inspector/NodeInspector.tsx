@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { newEntityId, useProjectStore } from '../../state/project';
 import { labelFor } from '../../state/templates';
 import { AssetPicker } from '../AssetPicker';
+import { ExpressionBuilder } from '../ExpressionBuilder';
 import { Field } from './Field';
 
 interface NodeInspectorProps {
@@ -213,21 +214,17 @@ function NodeSpecificFields({ node }: { node: SceneNode }) {
                       }
                       placeholder="Choice text"
                     />
-                    <Input
+                    <ExpressionBuilder
                       value={choice.condition ?? ''}
-                      onChange={(e) =>
+                      onChange={(next) =>
                         updateNode(node.id, {
                           choices: node.choices.map((c) =>
-                            c.id === choice.id
-                              ? {
-                                  ...c,
-                                  condition: e.target.value || undefined,
-                                }
-                              : c,
+                            c.id === choice.id ? { ...c, condition: next || undefined } : c,
                           ),
                         } as Partial<SceneNode>)
                       }
                       placeholder="Condition (optional)"
+                      allowEmpty
                     />
                   </div>
                   <IconButton
@@ -470,24 +467,26 @@ function NodeSpecificFields({ node }: { node: SceneNode }) {
               + Add
             </Button>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {node.branches.map((branch, i) => (
               <li key={branch.id} className="flex items-start gap-2">
-                <span className="text-xs text-fg-muted mt-2 font-mono">
+                <span className="text-xs text-fg-muted mt-2 font-mono w-8">
                   {i === 0 ? 'if' : branch.condition === '' ? 'else' : 'elif'}
                 </span>
-                <Input
-                  className="flex-1"
-                  value={branch.condition}
-                  onChange={(e) =>
-                    updateNode(node.id, {
-                      branches: node.branches.map((b) =>
-                        b.id === branch.id ? { ...b, condition: e.target.value } : b,
-                      ),
-                    } as Partial<SceneNode>)
-                  }
-                  placeholder="Python expression (empty = else)"
-                />
+                <div className="flex-1">
+                  <ExpressionBuilder
+                    value={branch.condition}
+                    onChange={(next) =>
+                      updateNode(node.id, {
+                        branches: node.branches.map((b) =>
+                          b.id === branch.id ? { ...b, condition: next } : b,
+                        ),
+                      } as Partial<SceneNode>)
+                    }
+                    placeholder="Python expression (empty = else)"
+                    allowEmpty
+                  />
+                </div>
                 <IconButton
                   label="Remove branch"
                   size="sm"
@@ -518,8 +517,12 @@ function NodeSpecificFields({ node }: { node: SceneNode }) {
               ]}
             />
           </Field>
-          <Field label="Expression" hint="raw Python">
-            <Input value={node.expression} onChange={(e) => set({ expression: e.target.value })} />
+          <Field label="Expression" hint="Python">
+            <ExpressionBuilder
+              value={node.expression}
+              onChange={(next) => set({ expression: next })}
+              placeholder="True, love_points + 1, ..."
+            />
           </Field>
         </>
       );

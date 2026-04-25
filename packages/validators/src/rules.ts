@@ -245,6 +245,107 @@ function record(
   }
 }
 
+/**
+ * Rule (M4): warn on nodes that aren't reachable from any entry point.
+ *
+ * Entry points include the scene's `entryNodeId` and every `LabelNode`. We
+ * walk all outgoing edges and report any node that wasn't visited.
+ */
+export function checkUnreachableNodes(bundle: SpecBundle): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  for (const scene of bundle.scenes) {
+    const entries = collectEntryIds(scene);
+    const reachable = new Set<string>();
+    const adj = new Map<string, string[]>();
+    for (const e of scene.edges) {
+      const list = adj.get(e.source) ?? [];
+      list.push(e.target);
+      adj.set(e.source, list);
+    }
+    const stack = [...entries];
+    while (stack.length) {
+      const id = stack.pop();
+      if (!id || reachable.has(id)) continue;
+      reachable.add(id);
+      for (const next of adj.get(id) ?? []) stack.push(next);
+    }
+    for (const node of scene.nodes) {
+      if (!reachable.has(node.id)) {
+        out.push({
+          severity: 'warning',
+          code: 'UNREACHABLE_NODE',
+          message: `Node "${node.id}" (${node.type}) is not reachable from any entry point`,
+          source: sceneSource(scene),
+          location: node.id,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+function collectEntryIds(scene: SceneSpec): string[] {
+  const ids = new Set<string>();
+  if (scene.nodes.some((n) => n.id === scene.entryNodeId)) ids.add(scene.entryNodeId);
+  for (const n of scene.nodes) if (n.type === 'label') ids.add(n.id);
+  // Synthetic-label joins (>1 inbound edges) become entries at codegen time;
+  // they only exist as a result of being already-reachable, so not added here.
+  return [...ids];
+}
+
+/** Rule (M4): warn when an If node has only one branch. */
+export function checkIfTriviality(bundle: SpecBundle): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  for (const scene of bundle.scenes) {
+    for (const node of scene.nodes) {
+      if (node.type !== 'if') continue;
+      if (node.branches.length === 1) {
+        out.push({
+          severity: 'info',
+          code: 'TRIVIAL_IF',
+          message: 'If node has only one branch; consider removing it',
+          source: sceneSource(scene),
+          location: node.id,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** Rule (M4): warn when a relationshipOp's character does not exist. */
+export function checkRelationshipCharacters(bundle: SpecBundle): Diagnostic[] {
+  const known = new Set(bundle.characters.characters.map((c) => c.id));
+  const out: Diagnostic[] = [];
+  for (const scene of bundle.scenes) {
+    for (const node of scene.nodes) {
+      if (
+        (node.type === 'relationshipOp' || node.type === 'show' || node.type === 'hide') &&
+        node.characterId &&
+        !known.has(node.characterId)
+      ) {
+        out.push({
+          severity: 'error',
+          code: 'UNKNOWN_CHARACTER',
+          message: `Node references unknown character id "${node.characterId}"`,
+          source: sceneSource(scene),
+          location: node.id,
+        });
+      }
+      if (node.type === 'say' && node.characterId && !known.has(node.characterId)) {
+        out.push({
+          severity: 'error',
+          code: 'UNKNOWN_CHARACTER',
+          message: `Say node references unknown character id "${node.characterId}"`,
+          source: sceneSource(scene),
+          location: node.id,
+        });
+      }
+    }
+  }
+  return out;
+}
+
 export const ALL_RULES = [
   checkReservedIdentifiers,
   checkLabelReferences,
@@ -253,6 +354,9 @@ export const ALL_RULES = [
   checkIfBranchOrder,
   checkUniqueLabels,
   checkVariableDeclarations,
+  checkUnreachableNodes,
+  checkIfTriviality,
+  checkRelationshipCharacters,
 ] as const;
 
 export function validateBundle(bundle: SpecBundle): Diagnostic[] {

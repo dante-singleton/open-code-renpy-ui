@@ -1,0 +1,81 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_START",
+  "label": "start",
+  "title": "Start",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_seen",
+      "type": "setVar",
+      "position": { "x": 200, "y": 0 },
+      "variable": "seen_intro",
+      "expression": "True"
+    },
+    {
+      "id": "n_alice_inv",
+      "type": "inventoryOp",
+      "position": { "x": 400, "y": 0 },
+      "op": "add",
+      "itemId": "old_letter",
+      "quantity": 1
+    },
+    {
+      "id": "n_say",
+      "type": "say",
+      "position": { "x": 600, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "text": "Train, or talk?"
+    },
+    {
+      "id": "n_menu",
+      "type": "menu",
+      "position": { "x": 800, "y": 0 },
+      "choices": [
+        { "id": "c_train", "text": "\"Train.\"" },
+        { "id": "c_talk", "text": "\"Talk.\"" }
+      ]
+    },
+    {
+      "id": "n_train_stat",
+      "type": "statOp",
+      "position": { "x": 1000, "y": -80 },
+      "stat": "strength",
+      "op": "add",
+      "value": 2
+    },
+    {
+      "id": "n_talk_inc",
+      "type": "increment",
+      "position": { "x": 1000, "y": 80 },
+      "variable": "love_points",
+      "delta": 1
+    },
+    {
+      "id": "n_talk_rel",
+      "type": "relationshipOp",
+      "position": { "x": 1200, "y": 80 },
+      "characterId": "01HYZCHAR_ALICE",
+      "op": "add",
+      "value": 1
+    },
+    {
+      "id": "n_jump",
+      "type": "jump",
+      "position": { "x": 1400, "y": 0 },
+      "target": "door"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_seen" },
+    { "id": "e2", "source": "n_seen", "target": "n_alice_inv" },
+    { "id": "e3", "source": "n_alice_inv", "target": "n_say" },
+    { "id": "e4", "source": "n_say", "target": "n_menu" },
+    { "id": "e5", "source": "n_menu", "sourceHandle": "choice:c_train", "target": "n_train_stat" },
+    { "id": "e6", "source": "n_menu", "sourceHandle": "choice:c_talk", "target": "n_talk_inc" },
+    { "id": "e7", "source": "n_train_stat", "target": "n_jump" },
+    { "id": "e8", "source": "n_talk_inc", "target": "n_talk_rel" },
+    { "id": "e9", "source": "n_talk_rel", "target": "n_jump" }
+  ]
+}

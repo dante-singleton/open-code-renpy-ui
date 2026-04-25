@@ -1,0 +1,27 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZPROJECT_STATS",
+  "name": "Demo Stats",
+  "renpyPackage": "demo_stats",
+  "version": "0.1.0",
+  "authors": ["Open-Code-RenPy-UI"],
+  "startLabel": "start",
+  "locales": ["en"],
+  "paths": {
+    "specDir": ".renpy-ui",
+    "generatedDir": "game/generated",
+    "assetsDir": "game"
+  },
+  "renpy": {
+    "minVersion": "8.2.0",
+    "buildWindows": true,
+    "buildMac": true,
+    "buildLinux": true,
+    "buildWeb": false
+  },
+  "scenes": [
+    { "id": "01HYZSCENE_START", "label": "start", "file": "scenes/start.json" },
+    { "id": "01HYZSCENE_DOOR", "label": "door", "file": "scenes/door.json" }
+  ],
+  "screens": []
+}

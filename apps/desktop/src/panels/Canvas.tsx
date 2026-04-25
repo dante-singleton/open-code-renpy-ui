@@ -29,19 +29,63 @@ function toRfNode(spec: SceneNode, selected: boolean): Node<CustomNodeData> {
   };
 }
 
-function toRfEdge(spec: SceneEdge, selected: boolean): Edge {
-  // Use a coloured stroke per source node category if known; falls back to a
-  // neutral edge. We don't have the source node here, so leave styling to CSS
-  // and only set selection.
+function toRfEdge(spec: SceneEdge, selected: boolean, derivedLabel: string | undefined): Edge {
   return {
     id: spec.id,
     source: spec.source,
     target: spec.target,
     sourceHandle: spec.sourceHandle ?? null,
-    label: spec.label,
+    label: spec.label ?? derivedLabel,
     selected,
     type: 'default',
+    labelBgPadding: derivedLabel ? [6, 2] : undefined,
+    labelBgBorderRadius: 4,
+    labelBgStyle: derivedLabel
+      ? {
+          fill: 'var(--color-bg-2)',
+          stroke: 'var(--color-border)',
+        }
+      : undefined,
+    labelStyle: derivedLabel
+      ? {
+          fill: 'var(--color-text-secondary)',
+          fontSize: 10,
+          fontFamily: 'JetBrains Mono Variable, monospace',
+        }
+      : undefined,
   };
+}
+
+/**
+ * Pull a short human label from a sourceHandle of `choice:<id>` or
+ * `branch:<id>` by looking up the corresponding choice/branch object.
+ */
+function deriveEdgeLabel(
+  spec: SceneEdge,
+  scene: import('@renpy-ui/spec').SceneSpec,
+): string | undefined {
+  if (!spec.sourceHandle) return undefined;
+  const source = scene.nodes.find((n) => n.id === spec.source);
+  if (!source) return undefined;
+  if (source.type === 'menu' && spec.sourceHandle.startsWith('choice:')) {
+    const choiceId = spec.sourceHandle.slice('choice:'.length);
+    const choice = source.choices.find((c) => c.id === choiceId);
+    return shorten(choice?.text ?? 'choice');
+  }
+  if (source.type === 'if' && spec.sourceHandle.startsWith('branch:')) {
+    const branchId = spec.sourceHandle.slice('branch:'.length);
+    const i = source.branches.findIndex((b) => b.id === branchId);
+    const branch = source.branches[i];
+    if (!branch) return undefined;
+    if (branch.condition === '') return 'else';
+    return `${i === 0 ? 'if' : 'elif'} ${shorten(branch.condition, 18)}`;
+  }
+  return undefined;
+}
+
+function shorten(text: string, max = 20): string {
+  const t = text.replace(/\s+/g, ' ').trim();
+  return t.length > max ? `${t.slice(0, max - 1)}\u2026` : t;
 }
 
 export function Canvas() {
@@ -68,8 +112,10 @@ export function Canvas() {
   );
 
   const edges = useMemo<Edge[]>(
-    () => scene?.edges.map((e) => toRfEdge(e, selectedEdgeSet.has(e.id))) ?? [],
-    [scene?.edges, selectedEdgeSet],
+    () =>
+      scene?.edges.map((e) => toRfEdge(e, selectedEdgeSet.has(e.id), deriveEdgeLabel(e, scene))) ??
+      [],
+    [scene, selectedEdgeSet],
   );
 
   const onNodesChange = useCallback(
