@@ -1,0 +1,42 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_INTRO",
+  "label": "intro",
+  "title": "Intro — Street",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_bg",
+      "type": "sceneBg",
+      "position": { "x": 200, "y": 0 },
+      "background": "images/bg/street.png",
+      "withTransition": "fade"
+    },
+    {
+      "id": "n_music",
+      "type": "playMusic",
+      "position": { "x": 400, "y": 0 },
+      "asset": "audio/music/calm.ogg",
+      "fadeIn": 1
+    },
+    {
+      "id": "n_say",
+      "type": "narration",
+      "position": { "x": 600, "y": 0 },
+      "text": "A quiet morning. The cafe is just up the street."
+    },
+    {
+      "id": "n_jump",
+      "type": "jump",
+      "position": { "x": 800, "y": 0 },
+      "target": "cafe"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_bg" },
+    { "id": "e2", "source": "n_bg", "target": "n_music" },
+    { "id": "e3", "source": "n_music", "target": "n_say" },
+    { "id": "e4", "source": "n_say", "target": "n_jump" }
+  ]
+}

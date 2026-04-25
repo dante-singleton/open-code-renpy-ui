@@ -1,0 +1,43 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_OUTRO",
+  "label": "outro",
+  "title": "Outro",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_hide_alice",
+      "type": "hide",
+      "position": { "x": 200, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "withTransition": "dissolve"
+    },
+    {
+      "id": "n_hide_ben",
+      "type": "hide",
+      "position": { "x": 400, "y": 0 },
+      "characterId": "01HYZCHAR_BEN"
+    },
+    {
+      "id": "n_stop_music",
+      "type": "stopMusic",
+      "position": { "x": 600, "y": 0 },
+      "fadeOut": 1.5
+    },
+    {
+      "id": "n_say",
+      "type": "narration",
+      "position": { "x": 800, "y": 0 },
+      "text": "And so the morning ended."
+    },
+    { "id": "n_end", "type": "end", "position": { "x": 1000, "y": 0 } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_hide_alice" },
+    { "id": "e2", "source": "n_hide_alice", "target": "n_hide_ben" },
+    { "id": "e3", "source": "n_hide_ben", "target": "n_stop_music" },
+    { "id": "e4", "source": "n_stop_music", "target": "n_say" },
+    { "id": "e5", "source": "n_say", "target": "n_end" }
+  ]
+}

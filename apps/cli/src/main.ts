@@ -9,7 +9,8 @@
  *
  * Exits non-zero on validation errors so CI can use it.
  */
-import { generate, loadProject, writeGenerated } from '@renpy-ui/codegen';
+import { generate } from '@renpy-ui/codegen';
+import { loadProject, writeGenerated } from '@renpy-ui/codegen/node';
 import { hasErrors, validateBundle } from '@renpy-ui/validators';
 
 const args = process.argv.slice(2);

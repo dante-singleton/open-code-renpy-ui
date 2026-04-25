@@ -1,6 +1,21 @@
 import { Button, IconButton } from '@renpy-ui/ui';
+import { useShallow } from 'zustand/react/shallow';
+import { useProjectStore } from '../state/project';
 
 export function TopBar() {
+  const { dirtyCount, status, canPick } = useProjectStore(
+    useShallow((s) => ({
+      dirtyCount: s.dirty.size,
+      status: s.status,
+      canPick: s.storage?.canPickProject ?? false,
+    })),
+  );
+  const openProject = useProjectStore((s) => s.openProject);
+  const save = useProjectStore((s) => s.save);
+
+  const undo = () => useProjectStore.temporal.getState().undo();
+  const redo = () => useProjectStore.temporal.getState().redo();
+
   return (
     <header
       className={[
@@ -18,22 +33,35 @@ export function TopBar() {
         />
         <span className="font-semibold tracking-tight text-md">Open-Code-RenPy-UI</span>
         <span className="ml-2 px-1.5 py-0.5 rounded-xs text-[10px] font-semibold uppercase tracking-wider text-purple-200 bg-[color:var(--color-purple-700)]/40 border border-[color:var(--color-purple-700)]/60">
-          pre-alpha
+          M2 · canvas
         </span>
       </div>
+
       <div className="flex items-center gap-2">
-        <IconButton label="Undo" size="sm">
+        {canPick && (
+          <Button variant="ghost" size="sm" onClick={() => void openProject()}>
+            Open Project…
+          </Button>
+        )}
+        <IconButton label="Undo (Ctrl+Z)" size="sm" onClick={undo}>
           <span aria-hidden>↶</span>
         </IconButton>
-        <IconButton label="Redo" size="sm">
+        <IconButton label="Redo (Ctrl+Shift+Z)" size="sm" onClick={redo}>
           <span aria-hidden>↷</span>
         </IconButton>
         <div className="w-px h-5 bg-[color:var(--color-border)] mx-1" />
-        <Button variant="ghost" size="sm">
-          Generate
-        </Button>
-        <Button variant="primary" size="sm">
-          Save
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => void save()}
+          disabled={status === 'saving' || status === 'generating'}
+        >
+          {status === 'saving' ? 'Saving…' : status === 'generating' ? 'Generating…' : 'Save'}
+          {dirtyCount > 0 && status === 'idle' && (
+            <span className="ml-1.5 px-1 rounded-xs text-[9px] font-bold bg-bg-0/40 text-[color:var(--color-text-inverse)]">
+              {dirtyCount}
+            </span>
+          )}
         </Button>
       </div>
     </header>

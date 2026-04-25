@@ -1,0 +1,28 @@
+{
+  "specVersion": "1.0.0",
+  "characters": [
+    {
+      "id": "01HYZCHAR_ALICE",
+      "varName": "alice",
+      "displayName": "Alice",
+      "color": "#FF7A1A",
+      "images": {
+        "tag": "alice",
+        "expressions": [
+          { "name": "happy", "asset": "images/alice/happy.png" },
+          { "name": "sad", "asset": "images/alice/sad.png" }
+        ]
+      }
+    },
+    {
+      "id": "01HYZCHAR_BEN",
+      "varName": "ben",
+      "displayName": "Ben",
+      "color": "#9D4EDD",
+      "images": {
+        "tag": "ben",
+        "expressions": [{ "name": "neutral", "asset": "images/ben/neutral.png" }]
+      }
+    }
+  ]
+}

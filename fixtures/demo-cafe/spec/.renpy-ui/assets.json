@@ -1,0 +1,75 @@
+{
+  "specVersion": "1.0.0",
+  "assets": [
+    {
+      "id": "01HYZASSET_BG_STREET",
+      "ref": "images/bg/street.png",
+      "kind": "image",
+      "subkind": "background",
+      "tags": ["street"],
+      "hash": "bg_street",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_BG_CAFE",
+      "ref": "images/bg/cafe.png",
+      "kind": "image",
+      "subkind": "background",
+      "tags": ["cafe"],
+      "hash": "bg_cafe",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_ALICE_HAPPY",
+      "ref": "images/alice/happy.png",
+      "kind": "image",
+      "subkind": "sprite",
+      "tags": ["alice"],
+      "hash": "alice_happy",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_ALICE_SAD",
+      "ref": "images/alice/sad.png",
+      "kind": "image",
+      "subkind": "sprite",
+      "tags": ["alice"],
+      "hash": "alice_sad",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_BEN_NEUTRAL",
+      "ref": "images/ben/neutral.png",
+      "kind": "image",
+      "subkind": "sprite",
+      "tags": ["ben"],
+      "hash": "ben_neutral",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_MUSIC_CALM",
+      "ref": "audio/music/calm.ogg",
+      "kind": "audio",
+      "subkind": "music",
+      "tags": ["music"],
+      "hash": "music_calm",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "01HYZASSET_SFX_BELL",
+      "ref": "audio/sfx/bell.ogg",
+      "kind": "audio",
+      "subkind": "sfx",
+      "tags": ["sfx"],
+      "hash": "sfx_bell",
+      "sizeBytes": 0,
+      "importedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

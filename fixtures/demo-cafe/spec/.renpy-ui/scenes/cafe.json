@@ -1,0 +1,79 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_CAFE",
+  "label": "cafe",
+  "title": "Cafe interior",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_bg",
+      "type": "sceneBg",
+      "position": { "x": 200, "y": 0 },
+      "background": "images/bg/cafe.png",
+      "withTransition": "fade"
+    },
+    {
+      "id": "n_show_alice",
+      "type": "show",
+      "position": { "x": 400, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "expressionName": "happy",
+      "at": "left"
+    },
+    {
+      "id": "n_show_ben",
+      "type": "show",
+      "position": { "x": 600, "y": 0 },
+      "characterId": "01HYZCHAR_BEN",
+      "expressionName": "neutral",
+      "at": "right",
+      "withTransition": "dissolve"
+    },
+    {
+      "id": "n_bell",
+      "type": "playSound",
+      "position": { "x": 800, "y": 0 },
+      "asset": "audio/sfx/bell.ogg"
+    },
+    {
+      "id": "n_say_ben",
+      "type": "say",
+      "position": { "x": 1000, "y": 0 },
+      "characterId": "01HYZCHAR_BEN",
+      "expressionName": "neutral",
+      "text": "Welcome! Long time no see."
+    },
+    {
+      "id": "n_show_alice_sad",
+      "type": "show",
+      "position": { "x": 1200, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "expressionName": "sad"
+    },
+    {
+      "id": "n_say_alice",
+      "type": "say",
+      "position": { "x": 1400, "y": 0 },
+      "characterId": "01HYZCHAR_ALICE",
+      "expressionName": "sad",
+      "text": "It's been a rough week."
+    },
+    {
+      "id": "n_jump",
+      "type": "jump",
+      "position": { "x": 1600, "y": 0 },
+      "target": "outro"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_bg" },
+    { "id": "e2", "source": "n_bg", "target": "n_show_alice" },
+    { "id": "e3", "source": "n_show_alice", "target": "n_show_ben" },
+    { "id": "e4", "source": "n_show_ben", "target": "n_bell" },
+    { "id": "e5", "source": "n_bell", "target": "n_say_ben" },
+    { "id": "e6", "source": "n_say_ben", "target": "n_show_alice_sad" },
+    { "id": "e7", "source": "n_show_alice_sad", "target": "n_say_alice" },
+    { "id": "e8", "source": "n_say_alice", "target": "n_jump" }
+  ]
+}
