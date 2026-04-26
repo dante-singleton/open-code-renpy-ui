@@ -10,7 +10,12 @@ import type {
   SceneSpec,
   Variable,
 } from '@renpy-ui/spec';
-import { type Diagnostic, hasErrors, validateBundle } from '@renpy-ui/validators';
+import {
+  type Diagnostic,
+  hasErrors,
+  validateBundle,
+  validateBundleWithEnv,
+} from '@renpy-ui/validators';
 import { enableMapSet, produce } from 'immer';
 
 // Allow Immer to draft `Set` (used for the dirty tracker) and `Map`.
@@ -47,6 +52,14 @@ export interface ProjectState {
   diagnostics: Diagnostic[];
   lastGenerated: { written: number; unchanged: number } | null;
 
+  /**
+   * Asset refs that the storage backend has confirmed exist on disk. Updated
+   * by `refreshAssetEnvironment` and used by validators that need I/O.
+   */
+  existingAssetFiles: Set<string>;
+  /** Stored content hashes per asset ref, refreshed on demand. */
+  currentAssetHashes: Map<string, string>;
+
   // ---- temporal slice (undo/redo applies to these) ----
   bundle: SpecBundle | null;
   activeSceneId: string | null;
@@ -80,10 +93,28 @@ export interface ProjectState {
   removeAsset(assetId: string): void;
   importAssets(opts: { kindHint?: AssetKind; subkind?: AssetSubkind }): Promise<Asset[]>;
 
+  /**
+   * Switch to the scene whose spec file matches `sourcePath` (relative path,
+   * e.g. ".renpy-ui/scenes/start.json") and select the given node id.
+   * No-op if either part can't be resolved.
+   */
+  jumpToNode(sourcePath: string, nodeId: string): void;
+  /**
+   * Remove a node identified by (sourcePath, nodeId), regardless of which
+   * scene is currently active. Used by quick-fix actions.
+   */
+  removeNodeAt(sourcePath: string, nodeId: string): void;
+
   /** Save dirty spec docs. Triggers codegen on success. */
   save(): Promise<void>;
   /** Run validators only (no save). */
   validate(): void;
+  /**
+   * Refresh the asset existence + hash maps from the storage backend, then
+   * re-validate. Use after asset import / removal, project open, or when an
+   * external file watcher reports asset changes.
+   */
+  refreshAssetEnvironment(): Promise<void>;
 }
 
 type TemporalSlice = Pick<
@@ -134,6 +165,8 @@ export const useProjectStore: UseBoundStore<
       dirty: new Set(),
       diagnostics: [],
       lastGenerated: null,
+      existingAssetFiles: new Set(),
+      currentAssetHashes: new Map(),
       bundle: null,
       activeSceneId: null,
       selectedNodeIds: [],
@@ -170,9 +203,15 @@ export const useProjectStore: UseBoundStore<
             selectedNodeIds: [],
             selectedEdgeIds: [],
             dirty: new Set(),
+            existingAssetFiles: new Set(),
+            currentAssetHashes: new Map(),
             status: 'idle',
             diagnostics: validateBundle(bundle),
           });
+          // Refresh asset env in the background; the validator runs again
+          // when it completes. Failure is non-fatal — the UI just shows the
+          // pure-rules result until the env is back.
+          void get().refreshAssetEnvironment();
         } catch (err) {
           set({
             status: 'error',
@@ -204,7 +243,12 @@ export const useProjectStore: UseBoundStore<
             if (!scene) return;
             scene.nodes.push(node);
             markDirty(s, sceneFile(scene.label));
-            s.diagnostics = s.bundle ? validateBundle(s.bundle) : [];
+            s.diagnostics = s.bundle
+              ? validateBundleWithEnv(s.bundle, {
+                  existingAssetFiles: s.existingAssetFiles,
+                  currentAssetHashes: s.currentAssetHashes,
+                })
+              : [];
           }),
         );
       },
@@ -220,7 +264,12 @@ export const useProjectStore: UseBoundStore<
             // compatible with the discriminated union member.
             scene.nodes[idx] = { ...scene.nodes[idx], ...patch } as SceneNode;
             markDirty(s, sceneFile(scene.label));
-            s.diagnostics = s.bundle ? validateBundle(s.bundle) : [];
+            s.diagnostics = s.bundle
+              ? validateBundleWithEnv(s.bundle, {
+                  existingAssetFiles: s.existingAssetFiles,
+                  currentAssetHashes: s.currentAssetHashes,
+                })
+              : [];
           }),
         );
       },
@@ -235,7 +284,12 @@ export const useProjectStore: UseBoundStore<
             scene.edges = scene.edges.filter((e) => !ids.has(e.source) && !ids.has(e.target));
             s.selectedNodeIds = s.selectedNodeIds.filter((id) => !ids.has(id));
             markDirty(s, sceneFile(scene.label));
-            s.diagnostics = s.bundle ? validateBundle(s.bundle) : [];
+            s.diagnostics = s.bundle
+              ? validateBundleWithEnv(s.bundle, {
+                  existingAssetFiles: s.existingAssetFiles,
+                  currentAssetHashes: s.currentAssetHashes,
+                })
+              : [];
           }),
         );
       },
@@ -265,7 +319,12 @@ export const useProjectStore: UseBoundStore<
             );
             scene.edges.push(edge);
             markDirty(s, sceneFile(scene.label));
-            s.diagnostics = s.bundle ? validateBundle(s.bundle) : [];
+            s.diagnostics = s.bundle
+              ? validateBundleWithEnv(s.bundle, {
+                  existingAssetFiles: s.existingAssetFiles,
+                  currentAssetHashes: s.currentAssetHashes,
+                })
+              : [];
           }),
         );
       },
@@ -279,7 +338,12 @@ export const useProjectStore: UseBoundStore<
             scene.edges = scene.edges.filter((e) => !ids.has(e.id));
             s.selectedEdgeIds = s.selectedEdgeIds.filter((id) => !ids.has(id));
             markDirty(s, sceneFile(scene.label));
-            s.diagnostics = s.bundle ? validateBundle(s.bundle) : [];
+            s.diagnostics = s.bundle
+              ? validateBundleWithEnv(s.bundle, {
+                  existingAssetFiles: s.existingAssetFiles,
+                  currentAssetHashes: s.currentAssetHashes,
+                })
+              : [];
           }),
         );
       },
@@ -292,7 +356,10 @@ export const useProjectStore: UseBoundStore<
             if (idx === -1) s.bundle.characters.characters.push(character);
             else s.bundle.characters.characters[idx] = character;
             markDirty(s, CHARACTERS_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -305,7 +372,10 @@ export const useProjectStore: UseBoundStore<
               (c) => c.id !== characterId,
             );
             markDirty(s, CHARACTERS_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -318,7 +388,10 @@ export const useProjectStore: UseBoundStore<
             if (idx === -1) s.bundle.variables.variables.push(variable);
             else s.bundle.variables.variables[idx] = variable;
             markDirty(s, VARIABLES_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -331,7 +404,10 @@ export const useProjectStore: UseBoundStore<
               (v) => v.id !== variableId,
             );
             markDirty(s, VARIABLES_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -344,7 +420,10 @@ export const useProjectStore: UseBoundStore<
             if (idx === -1) s.bundle.assets.assets.push(asset);
             else s.bundle.assets.assets[idx] = asset;
             markDirty(s, ASSETS_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -355,7 +434,41 @@ export const useProjectStore: UseBoundStore<
             if (!s.bundle) return;
             s.bundle.assets.assets = s.bundle.assets.assets.filter((a) => a.id !== assetId);
             markDirty(s, ASSETS_FILE);
-            s.diagnostics = validateBundle(s.bundle);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
+          }),
+        );
+      },
+
+      jumpToNode(sourcePath, nodeId) {
+        const bundle = get().bundle;
+        if (!bundle) return;
+        const scene = sceneFromSpecPath(bundle.scenes, sourcePath);
+        if (!scene) return;
+        if (!scene.nodes.some((n) => n.id === nodeId)) return;
+        set({
+          activeSceneId: scene.id,
+          selectedNodeIds: [nodeId],
+          selectedEdgeIds: [],
+        });
+      },
+
+      removeNodeAt(sourcePath, nodeId) {
+        set(
+          produce((s: ProjectState) => {
+            if (!s.bundle) return;
+            const scene = sceneFromSpecPath(s.bundle.scenes, sourcePath);
+            if (!scene) return;
+            scene.nodes = scene.nodes.filter((n) => n.id !== nodeId);
+            scene.edges = scene.edges.filter((e) => e.source !== nodeId && e.target !== nodeId);
+            s.selectedNodeIds = s.selectedNodeIds.filter((id) => id !== nodeId);
+            markDirty(s, sceneFile(scene.label));
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
           }),
         );
       },
@@ -381,13 +494,54 @@ export const useProjectStore: UseBoundStore<
           importedAt: new Date().toISOString(),
         }));
         for (const a of assets) get().upsertAsset(a);
+        await get().refreshAssetEnvironment();
         return assets;
       },
 
       validate() {
         const bundle = get().bundle;
         if (!bundle) return;
-        set({ diagnostics: validateBundle(bundle) });
+        set({
+          diagnostics: validateBundleWithEnv(bundle, {
+            existingAssetFiles: get().existingAssetFiles,
+            currentAssetHashes: get().currentAssetHashes,
+          }),
+        });
+      },
+
+      async refreshAssetEnvironment() {
+        const { storage, bundle } = get();
+        if (!storage || !bundle) return;
+        const refs = new Set(bundle.assets.assets.map((a) => a.ref));
+        if (refs.size === 0) {
+          set({
+            existingAssetFiles: new Set(),
+            currentAssetHashes: new Map(),
+          });
+          get().validate();
+          return;
+        }
+        // The storage backend takes paths relative to the project root;
+        // AssetRefs are relative to the assets dir (game/). Adapt at the
+        // boundary so callers can keep using bare AssetRef strings.
+        const assetsDir = bundle.project.paths.assetsDir.replace(/\/+$/, '');
+        const toRoot = (ref: string) => (assetsDir ? `${assetsDir}/${ref}` : ref);
+        const fromRoot = (rooted: string): string =>
+          assetsDir && rooted.startsWith(`${assetsDir}/`)
+            ? rooted.slice(assetsDir.length + 1)
+            : rooted;
+        try {
+          const rooted = new Set([...refs].map(toRoot));
+          const existingRooted = await storage.listExistingAssetFiles(rooted);
+          const existing = new Set([...existingRooted].map(fromRoot));
+          const hashesRooted = await storage.hashAssetFiles(existingRooted);
+          const hashes = new Map<string, string>();
+          for (const [k, v] of hashesRooted) hashes.set(fromRoot(k), v);
+          set({ existingAssetFiles: existing, currentAssetHashes: hashes });
+          get().validate();
+        } catch {
+          // Non-fatal; keep previous env so the UI doesn't blink.
+        }
       },
 
       async save() {
@@ -478,6 +632,12 @@ async function persistDirty(
       if (scene) await storage.writeSpec(file, jsonString(scene));
     }
   }
+}
+
+function sceneFromSpecPath(scenes: SceneSpec[], sourcePath: string): SceneSpec | undefined {
+  if (!sourcePath.startsWith(SCENE_FILE_PREFIX)) return undefined;
+  const label = sourcePath.slice(SCENE_FILE_PREFIX.length, -'.json'.length);
+  return scenes.find((s) => s.label === label);
 }
 
 function inferSubkind(ref: string, kind: AssetKind): AssetSubkind | undefined {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { SpecBundle } from '../src/bundle';
 import {
+  checkAssetFilesExist,
+  checkAssetHashes,
+  checkAssetReferencesIndexed,
+  checkCallCycles,
   checkIfBranchOrder,
   checkIfTriviality,
   checkLabelReferences,
@@ -12,6 +16,7 @@ import {
   checkUnreachableNodes,
   checkVariableDeclarations,
   validateBundle,
+  validateBundleWithEnv,
 } from '../src/rules';
 
 function bundle(partial: Partial<SpecBundle> = {}): SpecBundle {
@@ -373,6 +378,275 @@ describe('relationship / show / hide character refs', () => {
     });
     const errors = checkRelationshipCharacters(b).filter((x) => x.code === 'UNKNOWN_CHARACTER');
     expect(errors).toHaveLength(3);
+  });
+});
+
+describe('asset references vs index', () => {
+  it('warns when a node references an asset not in the index', () => {
+    const b = bundle({
+      assets: { specVersion: '1.0.0', assets: [] },
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_bg',
+              type: 'sceneBg',
+              position: { x: 0, y: 0 },
+              background: 'images/bg/missing.png',
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_bg' },
+            { id: 'e2', source: 'n_bg', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    const diags = checkAssetReferencesIndexed(b);
+    expect(diags.some((d) => d.code === 'UNINDEXED_ASSET')).toBe(true);
+  });
+
+  it('warns when a character expression references an unindexed asset', () => {
+    const b = bundle({
+      assets: { specVersion: '1.0.0', assets: [] },
+      characters: {
+        specVersion: '1.0.0',
+        characters: [
+          {
+            id: 'c1',
+            varName: 'alice',
+            displayName: 'Alice',
+            color: '#FF7A1A',
+            images: {
+              tag: 'alice',
+              expressions: [{ name: 'happy', asset: 'images/alice/happy.png' }],
+            },
+          },
+        ],
+      },
+    });
+    expect(
+      checkAssetReferencesIndexed(b).some(
+        (d) => d.code === 'UNINDEXED_ASSET' && d.location === 'c1',
+      ),
+    ).toBe(true);
+  });
+
+  it('passes when every asset is indexed', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/room.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_bg',
+              type: 'sceneBg',
+              position: { x: 0, y: 0 },
+              background: 'images/bg/room.png',
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_bg' },
+            { id: 'e2', source: 'n_bg', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    expect(checkAssetReferencesIndexed(b)).toHaveLength(0);
+  });
+});
+
+describe('asset files on disk (env)', () => {
+  it('errors on indexed assets whose file is missing', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/room.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    const diags = checkAssetFilesExist(b, new Set());
+    expect(diags.some((d) => d.code === 'MISSING_ASSET_FILE')).toBe(true);
+  });
+
+  it('passes when the file is present', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/room.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    expect(checkAssetFilesExist(b, new Set(['images/bg/room.png']))).toHaveLength(0);
+  });
+});
+
+describe('asset hashes (env)', () => {
+  it('reports stale hash when on-disk content differs', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/room.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h_old',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    const diags = checkAssetHashes(b, new Map([['images/bg/room.png', 'h_new']]));
+    expect(diags.some((d) => d.code === 'STALE_ASSET_HASH')).toBe(true);
+  });
+
+  it('passes when hashes match', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/room.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h_same',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    expect(checkAssetHashes(b, new Map([['images/bg/room.png', 'h_same']]))).toHaveLength(0);
+  });
+});
+
+describe('call cycle detection', () => {
+  it('flags a 2-label cycle: A -> B, B -> A', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          id: 'sa',
+          label: 'a',
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_call', type: 'call', position: { x: 0, y: 0 }, target: 'b' },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_call' },
+            { id: 'e2', source: 'n_call', target: 'n_end' },
+          ],
+        }),
+        sceneShell({
+          id: 'sb',
+          label: 'b',
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_call', type: 'call', position: { x: 0, y: 0 }, target: 'a' },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_call' },
+            { id: 'e2', source: 'n_call', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    const diags = checkCallCycles(b);
+    expect(diags.some((d) => d.code === 'CALL_CYCLE')).toBe(true);
+  });
+
+  it('does not flag a linear chain', () => {
+    const b = bundle({
+      scenes: [
+        sceneShell({
+          id: 'sa',
+          label: 'a',
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_call', type: 'call', position: { x: 0, y: 0 }, target: 'b' },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_call' },
+            { id: 'e2', source: 'n_call', target: 'n_end' },
+          ],
+        }),
+        sceneShell({
+          id: 'sb',
+          label: 'b',
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [{ id: 'e1', source: 'n_start', target: 'n_end' }],
+        }),
+      ],
+    });
+    expect(checkCallCycles(b).filter((d) => d.code === 'CALL_CYCLE')).toHaveLength(0);
+  });
+});
+
+describe('validateBundleWithEnv', () => {
+  it('runs both pure and env-aware rules', () => {
+    const b = bundle({
+      assets: {
+        specVersion: '1.0.0',
+        assets: [
+          {
+            id: 'a1',
+            ref: 'images/bg/missing.png',
+            kind: 'image',
+            tags: [],
+            hash: 'h',
+            sizeBytes: 0,
+            importedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+      scenes: [sceneShell({})],
+    });
+    const diags = validateBundleWithEnv(b, { existingAssetFiles: new Set() });
+    expect(diags.some((d) => d.code === 'MISSING_ASSET_FILE')).toBe(true);
   });
 });
 

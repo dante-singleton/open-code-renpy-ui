@@ -7,14 +7,24 @@
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Mutex;
+use std::time::Duration;
 
+use notify::RecursiveMode;
+use notify_debouncer_mini::new_debouncer;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::State;
+use tauri::{Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
 struct ProjectRoot(Mutex<Option<PathBuf>>);
+
+/// Holds the active filesystem watcher (if any). We hand the debouncer to
+/// `Mutex` so we can replace it when the user opens a different project.
+type Debouncer = notify_debouncer_mini::Debouncer<notify::RecommendedWatcher>;
+
+#[derive(Default)]
+struct WatcherSlot(Mutex<Option<Debouncer>>);
 
 #[derive(Serialize, Deserialize)]
 struct GeneratedFile {
@@ -262,6 +272,97 @@ fn numbered_name(subdir: &str, file_name: &str, counter: u32) -> String {
     }
 }
 
+/// Return the subset of `refs` that exist on disk relative to the project root.
+#[tauri::command]
+fn asset_check_exists(
+    state: State<'_, ProjectRoot>,
+    refs: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let root = current_root(&state)?;
+    let mut out = Vec::with_capacity(refs.len());
+    for r in refs {
+        let abs = match resolve_within(&root, &r) {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+        if abs.exists() {
+            out.push(r);
+        }
+    }
+    Ok(out)
+}
+
+/// Compute SHA-256 hashes for each ref. Files that don't exist are skipped
+/// silently — caller pairs this with `asset_check_exists` for completeness.
+#[tauri::command]
+fn asset_hash_files(
+    state: State<'_, ProjectRoot>,
+    refs: Vec<String>,
+) -> Result<Vec<(String, String)>, String> {
+    let root = current_root(&state)?;
+    let mut out = Vec::with_capacity(refs.len());
+    for r in refs {
+        let abs = match resolve_within(&root, &r) {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+        if !abs.exists() {
+            continue;
+        }
+        let bytes = match fs::read(&abs) {
+            Ok(b) => b,
+            Err(_) => continue,
+        };
+        let mut hasher = Sha256::new();
+        hasher.update(&bytes);
+        out.push((r, format!("{:x}", hasher.finalize())));
+    }
+    Ok(out)
+}
+
+/// Start watching the project's spec directory and emit `spec-changed` events
+/// when files outside our own writes change. The watcher lives for the rest
+/// of the process; the previous one is dropped if a new project is opened.
+///
+/// Returns immediately. Events are debounced by 300ms.
+#[tauri::command]
+fn watch_start(
+    app: tauri::AppHandle,
+    state: State<'_, ProjectRoot>,
+    watcher_state: State<'_, WatcherSlot>,
+) -> Result<(), String> {
+    let root = current_root(&state)?;
+    let spec_dir = root.join(".renpy-ui");
+    if !spec_dir.exists() {
+        return Err(format!("spec dir does not exist: {}", spec_dir.display()));
+    }
+    let app_handle = app.clone();
+    let mut debouncer = new_debouncer(Duration::from_millis(300), move |result: notify_debouncer_mini::DebounceEventResult| {
+        if let Ok(events) = result {
+            let paths: Vec<String> = events
+                .iter()
+                .map(|e| e.path.to_string_lossy().into_owned())
+                .collect();
+            let _ = app_handle.emit("spec-changed", &paths);
+        }
+    })
+    .map_err(stringify)?;
+
+    debouncer
+        .watcher()
+        .watch(&spec_dir, RecursiveMode::Recursive)
+        .map_err(stringify)?;
+
+    *watcher_state.0.lock().unwrap() = Some(debouncer);
+    Ok(())
+}
+
+#[tauri::command]
+fn watch_stop(watcher_state: State<'_, WatcherSlot>) -> Result<(), String> {
+    *watcher_state.0.lock().unwrap() = None;
+    Ok(())
+}
+
 #[tauri::command]
 fn generated_write(
     state: State<'_, ProjectRoot>,
@@ -410,6 +511,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(ProjectRoot::default())
+        .manage(WatcherSlot::default())
         .invoke_handler(tauri::generate_handler![
             ping,
             app_version,
@@ -420,6 +522,10 @@ pub fn run() {
             spec_list_dir,
             generated_write,
             asset_import,
+            asset_check_exists,
+            asset_hash_files,
+            watch_start,
+            watch_stop,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

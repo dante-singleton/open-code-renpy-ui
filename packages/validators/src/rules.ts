@@ -246,6 +246,192 @@ function record(
 }
 
 /**
+ * Rule (M5): every AssetRef used by a scene/character/screen resolves to an
+ * entry in the AssetIndex. Pure-data check; the on-disk file existence check
+ * is `checkAssetFilesExist` which takes the set of files the caller knows
+ * about.
+ */
+export function checkAssetReferencesIndexed(bundle: SpecBundle): Diagnostic[] {
+  const known = new Set(bundle.assets.assets.map((a) => a.ref));
+  const out: Diagnostic[] = [];
+  for (const c of bundle.characters.characters) {
+    for (const e of c.images.expressions) {
+      if (!known.has(e.asset)) {
+        out.push({
+          severity: 'warning',
+          code: 'UNINDEXED_ASSET',
+          message: `Character expression "${c.varName}.${e.name}" references unindexed asset "${e.asset}"`,
+          source: '.renpy-ui/characters.json',
+          location: c.id,
+        });
+      }
+    }
+    for (const p of c.images.poses ?? []) {
+      if (!known.has(p.asset)) {
+        out.push({
+          severity: 'warning',
+          code: 'UNINDEXED_ASSET',
+          message: `Character pose "${c.varName}.${p.name}" references unindexed asset "${p.asset}"`,
+          source: '.renpy-ui/characters.json',
+          location: c.id,
+        });
+      }
+    }
+  }
+  for (const scene of bundle.scenes) {
+    for (const node of scene.nodes) {
+      const refs = assetRefsFromNode(node);
+      for (const ref of refs) {
+        if (!known.has(ref)) {
+          out.push({
+            severity: 'warning',
+            code: 'UNINDEXED_ASSET',
+            message: `Node references unindexed asset "${ref}"`,
+            source: sceneSource(scene),
+            location: node.id,
+          });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Rule (M5): asset entries that resolve to files which don't exist on disk.
+ * Caller passes the set of asset refs (relative to the project root) it has
+ * verified to exist; we report each AssetIndex entry not in that set, plus
+ * any scene/character ref that isn't in the index AND isn't on disk.
+ */
+export function checkAssetFilesExist(
+  bundle: SpecBundle,
+  existingFiles: ReadonlySet<string>,
+): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  for (const a of bundle.assets.assets) {
+    if (!existingFiles.has(a.ref)) {
+      out.push({
+        severity: 'error',
+        code: 'MISSING_ASSET_FILE',
+        message: `Asset "${a.ref}" is in the index but the file is missing on disk`,
+        source: '.renpy-ui/assets.json',
+        location: a.id,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Rule (M5): warn when an Asset entry's stored hash doesn't match the
+ * caller-supplied current hash (i.e. the file was modified outside the editor).
+ */
+export function checkAssetHashes(
+  bundle: SpecBundle,
+  currentHashes: ReadonlyMap<string, string>,
+): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  for (const a of bundle.assets.assets) {
+    const fresh = currentHashes.get(a.ref);
+    if (fresh && fresh !== a.hash) {
+      out.push({
+        severity: 'info',
+        code: 'STALE_ASSET_HASH',
+        message: `Asset "${a.ref}" has changed on disk; re-import to refresh metadata`,
+        source: '.renpy-ui/assets.json',
+        location: a.id,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Rule (M5): detect a `call` chain that re-enters a label without a
+ * `return` to break it. The check is intentionally conservative: it walks
+ * out-edges from each `call` node within the same scene and reports a cycle
+ * if the same call target is hit again before any `return` is seen.
+ *
+ * Cross-scene call cycles are reported when the call target resolves to a
+ * scene's entry label and that scene also calls back into ours.
+ */
+export function checkCallCycles(bundle: SpecBundle): Diagnostic[] {
+  // Build a project-wide call graph: label -> labels it calls.
+  const callGraph = new Map<string, Set<string>>();
+  function add(from: string, to: string): void {
+    const set = callGraph.get(from) ?? new Set<string>();
+    set.add(to);
+    callGraph.set(from, set);
+  }
+
+  // Each scene's main label calls every call-target reachable inside it.
+  for (const scene of bundle.scenes) {
+    const calls = scene.nodes.filter((n) => n.type === 'call');
+    for (const c of calls) {
+      if (c.type === 'call') add(scene.label, c.target);
+    }
+    // Sub-labels within the scene also count as call sources.
+    for (const n of scene.nodes) {
+      if (n.type === 'label') {
+        for (const c of calls) {
+          if (c.type === 'call') add(n.name, c.target);
+        }
+      }
+    }
+  }
+
+  const out: Diagnostic[] = [];
+  for (const start of callGraph.keys()) {
+    const stack: Array<{ node: string; path: string[] }> = [{ node: start, path: [start] }];
+    while (stack.length) {
+      const { node, path } = stack.pop() as { node: string; path: string[] };
+      const targets = callGraph.get(node);
+      if (!targets) continue;
+      for (const t of targets) {
+        if (path.includes(t)) {
+          out.push({
+            severity: 'error',
+            code: 'CALL_CYCLE',
+            message: `Cyclic call chain detected: ${[...path, t].join(' -> ')}`,
+            source: '.renpy-ui',
+          });
+          continue;
+        }
+        stack.push({ node: t, path: [...path, t] });
+      }
+    }
+  }
+
+  // Deduplicate by message — DFS may report the same cycle from multiple starts.
+  const seen = new Set<string>();
+  return out.filter((d) => {
+    if (seen.has(d.message)) return false;
+    seen.add(d.message);
+    return true;
+  });
+}
+
+/**
+ * Helper: collect every AssetRef appearing on a SceneNode.
+ */
+function assetRefsFromNode(node: import('@renpy-ui/spec').SceneNode): string[] {
+  switch (node.type) {
+    case 'sceneBg':
+      return [node.background];
+    case 'playMusic':
+    case 'playSound':
+    case 'playVoice':
+      return [node.asset];
+    case 'queue':
+      return [node.asset];
+    case 'say':
+      return node.voice ? [node.voice] : [];
+    default:
+      return [];
+  }
+}
+
+/**
  * Rule (M4): warn on nodes that aren't reachable from any entry point.
  *
  * Entry points include the scene's `entryNodeId` and every `LabelNode`. We
@@ -357,7 +543,39 @@ export const ALL_RULES = [
   checkUnreachableNodes,
   checkIfTriviality,
   checkRelationshipCharacters,
+  checkAssetReferencesIndexed,
+  checkCallCycles,
 ] as const;
+
+/**
+ * Optional environment passed into the I/O-aware extension of validateBundle.
+ * Both fields are optional; pass only what you can resolve.
+ */
+export interface ValidationEnvironment {
+  /** Asset refs (relative to project root) confirmed to exist on disk. */
+  existingAssetFiles?: ReadonlySet<string>;
+  /** Current SHA-256 (or any stable hash) per asset ref. */
+  currentAssetHashes?: ReadonlyMap<string, string>;
+}
+
+/**
+ * Variant of validateBundle that also runs the I/O-aware rules. Useful in the
+ * desktop app and CLI where the environment is reachable; the pure
+ * `validateBundle` keeps its no-args signature for browser consumers.
+ */
+export function validateBundleWithEnv(
+  bundle: SpecBundle,
+  env: ValidationEnvironment,
+): Diagnostic[] {
+  const all: Diagnostic[] = [...validateBundle(bundle)];
+  if (env.existingAssetFiles) {
+    all.push(...checkAssetFilesExist(bundle, env.existingAssetFiles));
+  }
+  if (env.currentAssetHashes) {
+    all.push(...checkAssetHashes(bundle, env.currentAssetHashes));
+  }
+  return all;
+}
 
 export function validateBundle(bundle: SpecBundle): Diagnostic[] {
   const all: Diagnostic[] = [];

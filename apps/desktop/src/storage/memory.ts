@@ -68,6 +68,21 @@ export class MemoryStorage implements ProjectStorage {
     throw new Error('Asset import requires the desktop (Tauri) build.');
   }
 
+  async listExistingAssetFiles(refs: ReadonlySet<string>): Promise<Set<string>> {
+    // In-memory backend: every ref the caller knows about is treated as
+    // "present" so the validator behaves benignly for the seeded demo.
+    return new Set(refs);
+  }
+
+  async hashAssetFiles(_refs: ReadonlySet<string>): Promise<Map<string, string>> {
+    return new Map();
+  }
+
+  async watchSpec(_handler: (changedPaths: string[]) => void): Promise<() => void> {
+    // No filesystem to watch. Return a no-op unsubscribe.
+    return () => {};
+  }
+
   /** Test helper: snapshot of generated .rpy contents. */
   generatedFiles(): Map<string, string> {
     return new Map(this.generated);

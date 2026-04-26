@@ -41,4 +41,26 @@ export interface ProjectStorage {
       hash: string;
     }>
   >;
+
+  /**
+   * Return the set of asset refs (relative to project root) that currently
+   * exist on disk. Used by the asset-existence validator. The set may be
+   * filtered to a subset of relative paths the caller cares about; this
+   * lets the storage backend skip work for very large asset trees.
+   */
+  listExistingAssetFiles(refs: ReadonlySet<string>): Promise<Set<string>>;
+
+  /**
+   * Compute the current content hash for each asset ref the caller already
+   * confirmed exists. The set may overlap with what `listExistingAssetFiles`
+   * returned. Implementations may stream / pool to keep large hash work fast.
+   */
+  hashAssetFiles(refs: ReadonlySet<string>): Promise<Map<string, string>>;
+
+  /**
+   * Subscribe to filesystem changes under the spec directory. Returns an
+   * unsubscribe function. Implementations that don't support watching (e.g.
+   * the in-memory backend) return a no-op.
+   */
+  watchSpec(handler: (changedPaths: string[]) => void): Promise<() => void>;
 }

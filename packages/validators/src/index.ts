@@ -7,3 +7,4 @@
 export * from './types';
 export * from './bundle';
 export * from './rules';
+export * from './quick-fixes';

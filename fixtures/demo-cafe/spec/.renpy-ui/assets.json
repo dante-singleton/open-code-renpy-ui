@@ -7,7 +7,7 @@
       "kind": "image",
       "subkind": "background",
       "tags": ["street"],
-      "hash": "bg_street",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -17,7 +17,7 @@
       "kind": "image",
       "subkind": "background",
       "tags": ["cafe"],
-      "hash": "bg_cafe",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -27,7 +27,7 @@
       "kind": "image",
       "subkind": "sprite",
       "tags": ["alice"],
-      "hash": "alice_happy",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -37,7 +37,7 @@
       "kind": "image",
       "subkind": "sprite",
       "tags": ["alice"],
-      "hash": "alice_sad",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -47,7 +47,7 @@
       "kind": "image",
       "subkind": "sprite",
       "tags": ["ben"],
-      "hash": "ben_neutral",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -57,7 +57,7 @@
       "kind": "audio",
       "subkind": "music",
       "tags": ["music"],
-      "hash": "music_calm",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     },
@@ -67,7 +67,7 @@
       "kind": "audio",
       "subkind": "sfx",
       "tags": ["sfx"],
-      "hash": "sfx_bell",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "sizeBytes": 0,
       "importedAt": "2026-01-01T00:00:00.000Z"
     }

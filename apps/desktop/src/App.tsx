@@ -23,9 +23,33 @@ export function App() {
   useEffect(() => {
     const storage = createStorage();
     useProjectStore.getState().setStorage(storage);
+    let unsubscribe: (() => void) | null = null;
     if (!storage.canPickProject) {
       void useProjectStore.getState().reloadProject();
     }
+
+    // After the first successful project load, start watching for external
+    // changes. The storage layer no-ops on backends that can't watch.
+    void (async () => {
+      // Wait one tick so the initial reload has a chance to set the bundle.
+      await Promise.resolve();
+      try {
+        unsubscribe = await storage.watchSpec(() => {
+          const state = useProjectStore.getState();
+          if (state.dirty.size === 0) {
+            void state.reloadProject();
+          }
+          // If there are dirty buffers, leave them alone for now. A merge
+          // prompt is on the M8 polish list.
+        });
+      } catch {
+        // Watching is best-effort.
+      }
+    })();
+
+    return () => {
+      unsubscribe?.();
+    };
   }, []);
 
   return (
