@@ -63,4 +63,13 @@ export interface ProjectStorage {
    * the in-memory backend) return a no-op.
    */
   watchSpec(handler: (changedPaths: string[]) => void): Promise<() => void>;
+
+  /**
+   * Convert an asset ref (relative to the assets dir, e.g. `images/bg/x.png`)
+   * to a URL the browser can load via `<img src=...>`. Implementations that
+   * can't materialise an asset (the in-memory backend) return null.
+   *
+   * The asset ref is normalised against `paths.assetsDir` by the caller.
+   */
+  resolveAssetUrl(rootedRef: string): string | null;
 }

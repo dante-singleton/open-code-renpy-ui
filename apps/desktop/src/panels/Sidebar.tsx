@@ -1,15 +1,16 @@
 import { Panel } from '@renpy-ui/ui';
 import { useShallow } from 'zustand/react/shallow';
+import { EMPTY_ASSETS, EMPTY_CHARACTERS, EMPTY_SCENES, EMPTY_VARIABLES } from '../state/empty';
 import { useProjectStore } from '../state/project';
 
 export function Sidebar() {
   const { scenes, activeSceneId, characters, variables, assets } = useProjectStore(
     useShallow((s) => ({
-      scenes: s.bundle?.scenes ?? [],
+      scenes: s.bundle?.scenes ?? EMPTY_SCENES,
       activeSceneId: s.activeSceneId,
-      characters: s.bundle?.characters.characters ?? [],
-      variables: s.bundle?.variables.variables ?? [],
-      assets: s.bundle?.assets.assets ?? [],
+      characters: s.bundle?.characters.characters ?? EMPTY_CHARACTERS,
+      variables: s.bundle?.variables.variables ?? EMPTY_VARIABLES,
+      assets: s.bundle?.assets.assets ?? EMPTY_ASSETS,
     })),
   );
   const setActiveScene = useProjectStore((s) => s.setActiveScene);

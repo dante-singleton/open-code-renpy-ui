@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AssetPicker } from '../components/AssetPicker';
 import { Field } from '../components/inspector/Field';
+import { EMPTY_CHARACTERS } from '../state/empty';
 import { newEntityId, useProjectStore } from '../state/project';
 
 /**
@@ -12,7 +13,9 @@ import { newEntityId, useProjectStore } from '../state/project';
  * dirty tracking + undo work uniformly.
  */
 export function CharactersView() {
-  const characters = useProjectStore(useShallow((s) => s.bundle?.characters.characters ?? []));
+  const characters = useProjectStore(
+    useShallow((s) => s.bundle?.characters.characters ?? EMPTY_CHARACTERS),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(characters[0]?.id ?? null);
   const upsertCharacter = useProjectStore((s) => s.upsertCharacter);
   const removeCharacter = useProjectStore((s) => s.removeCharacter);

@@ -2,6 +2,7 @@ import type { Asset, AssetKind, AssetSubkind } from '@renpy-ui/spec';
 import { Button, IconButton, Input, Panel, Select } from '@renpy-ui/ui';
 import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { EMPTY_ASSETS } from '../state/empty';
 import { useProjectStore } from '../state/project';
 
 const KIND_OPTIONS: Array<{ value: AssetKind | 'all'; label: string }> = [
@@ -28,7 +29,7 @@ export function AssetsView() {
   const [search, setSearch] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const assets = useProjectStore(useShallow((s) => s.bundle?.assets.assets ?? []));
+  const assets = useProjectStore(useShallow((s) => s.bundle?.assets.assets ?? EMPTY_ASSETS));
   const upsertAsset = useProjectStore((s) => s.upsertAsset);
   const removeAsset = useProjectStore((s) => s.removeAsset);
   const importAssets = useProjectStore((s) => s.importAssets);

@@ -1,7 +1,6 @@
 import type { Asset, AssetKind, AssetSubkind } from '@renpy-ui/spec';
 import { Input } from '@renpy-ui/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { useProjectStore } from '../state/project';
 
 interface AssetPickerProps {
@@ -34,12 +33,13 @@ export function AssetPicker({
   const [filter, setFilter] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const assets = useProjectStore(
-    useShallow((s) =>
-      (s.bundle?.assets.assets ?? []).filter(
+  const rawAssets = useProjectStore((s) => s.bundle?.assets.assets);
+  const assets = useMemo(
+    () =>
+      (rawAssets ?? []).filter(
         (a) => (kind ? a.kind === kind : true) && (subkind ? a.subkind === subkind : true),
       ),
-    ),
+    [rawAssets, kind, subkind],
   );
 
   const filtered = useMemo(() => {

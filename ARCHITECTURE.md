@@ -83,6 +83,38 @@ for package versioning, **Biome** (or ESLint+Prettier) for lint/format.
 - Out of scope: file-level operations (rename, delete scene) — those prompt
   confirmation and are not undoable in v1.
 
+### Stable selectors
+
+`useSyncExternalStore` (the React 18 primitive Zustand uses) caches each
+component's snapshot and re-renders only when `Object.is(prev, next)` returns
+`false`. Any selector that builds a fresh value on every call will trip an
+infinite re-render loop ("Maximum update depth exceeded").
+
+Two patterns to avoid:
+
+```ts
+// ❌ Returns a new [] every call when bundle is null.
+useShallow((s) => s.bundle?.scenes ?? [])
+
+// ❌ Returns a new array even when the underlying data is unchanged.
+useShallow((s) => s.bundle?.variables.variables.map((v) => v.name) ?? [])
+```
+
+Two patterns to use instead:
+
+```ts
+// ✅ Module-scope frozen empties (see apps/desktop/src/state/empty.ts).
+useShallow((s) => s.bundle?.scenes ?? EMPTY_SCENES)
+
+// ✅ Stable read + useMemo for derivation.
+const raw = useProjectStore((s) => s.bundle?.variables.variables);
+const names = useMemo(() => (raw ?? []).map((v) => v.name), [raw]);
+```
+
+Also: every component is wrapped in `<ErrorBoundary>` (in `apps/desktop/src/main.tsx`)
+so any render-time exception is shown in-page instead of leaving the user
+with a blank screen.
+
 ---
 
 ## 4. Persistence & file sync

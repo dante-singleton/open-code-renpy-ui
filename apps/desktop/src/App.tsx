@@ -14,6 +14,7 @@ import { useWorkspaceStore } from './state/workspace';
 import { createStorage } from './storage';
 import { AssetsView } from './views/AssetsView';
 import { CharactersView } from './views/CharactersView';
+import { PreviewView } from './views/PreviewView';
 import { VariablesView } from './views/VariablesView';
 
 export function App() {
@@ -69,6 +70,8 @@ export function App() {
               <CodeLens />
             </div>
           </div>
+        ) : tab === 'preview' ? (
+          <PreviewView />
         ) : tab === 'characters' ? (
           <CharactersView />
         ) : tab === 'variables' ? (

@@ -1,6 +1,5 @@
 import { Input, Select, cn } from '@renpy-ui/ui';
 import { useEffect, useMemo, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { useProjectStore } from '../state/project';
 
 interface ExpressionBuilderProps {
@@ -60,9 +59,11 @@ export function ExpressionBuilder({
   placeholder = 'Python expression',
   allowEmpty = false,
 }: ExpressionBuilderProps) {
-  const variables = useProjectStore(
-    useShallow((s) => s.bundle?.variables.variables.map((v) => v.name) ?? []),
-  );
+  // Pull the raw catalog (a stable reference until the catalog itself changes)
+  // and derive `string[]` via useMemo, otherwise the inline `.map` would
+  // produce a fresh array on every render and break snapshot caching.
+  const rawVariables = useProjectStore((s) => s.bundle?.variables.variables);
+  const variables = useMemo(() => (rawVariables ?? []).map((v) => v.name), [rawVariables]);
 
   const initialParsed = useMemo(() => parseSimple(value), [value]);
   // We store the last guided-mode shape so toggling back to guided after

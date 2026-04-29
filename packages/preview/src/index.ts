@@ -1,14 +1,9 @@
 /**
  * @renpy-ui/preview
  *
- * HTML scene renderer. Stub in M0; real implementation lands in M6.
+ * Pure (framework-agnostic) preview runtime: state machine + types + a small
+ * expression evaluator for menu / if conditions.
+ *
+ * React bindings live in `@renpy-ui/preview/react`.
  */
-
-export interface PreviewState {
-  activeSceneId: string | null;
-  activeNodeId: string | null;
-}
-
-export function createPreviewState(): PreviewState {
-  return { activeSceneId: null, activeNodeId: null };
-}
+export * from './runtime';

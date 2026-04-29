@@ -1,6 +1,7 @@
 import type { Variable, VariableKind } from '@renpy-ui/spec';
 import { Button, IconButton, Input, Panel, Select } from '@renpy-ui/ui';
 import { useShallow } from 'zustand/react/shallow';
+import { EMPTY_VARIABLES } from '../state/empty';
 import { newEntityId, useProjectStore } from '../state/project';
 
 const KIND_OPTIONS: Array<{ value: VariableKind; label: string; defaultLiteral: string }> = [
@@ -22,7 +23,9 @@ function defaultLiteralFor(kind: VariableKind): string {
  * so a side-by-side layout would waste space.
  */
 export function VariablesView() {
-  const variables = useProjectStore(useShallow((s) => s.bundle?.variables.variables ?? []));
+  const variables = useProjectStore(
+    useShallow((s) => s.bundle?.variables.variables ?? EMPTY_VARIABLES),
+  );
   const upsertVariable = useProjectStore((s) => s.upsertVariable);
   const removeVariable = useProjectStore((s) => s.removeVariable);
 

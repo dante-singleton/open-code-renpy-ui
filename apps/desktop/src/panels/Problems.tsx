@@ -1,6 +1,7 @@
 import { Panel, cn } from '@renpy-ui/ui';
 import { type Severity, quickFixesFor } from '@renpy-ui/validators';
 import { useShallow } from 'zustand/react/shallow';
+import { EMPTY_SCENES } from '../state/empty';
 import { useProjectStore } from '../state/project';
 
 const SEVERITY_DOT: Record<Severity, string> = {
@@ -28,7 +29,7 @@ export function Problems() {
       selectNodes: s.selectNodes,
     })),
   );
-  const scenes = useProjectStore(useShallow((s) => s.bundle?.scenes ?? []));
+  const scenes = useProjectStore(useShallow((s) => s.bundle?.scenes ?? EMPTY_SCENES));
 
   function jumpFromSource(sourcePath: string | undefined, location: string | undefined): void {
     if (!sourcePath?.startsWith(SCENE_PREFIX)) return;

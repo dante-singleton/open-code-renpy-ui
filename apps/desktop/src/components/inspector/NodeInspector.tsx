@@ -1,6 +1,7 @@
 import type { SceneNode } from '@renpy-ui/spec';
 import { Button, IconButton, Input, Select } from '@renpy-ui/ui';
 import { useShallow } from 'zustand/react/shallow';
+import { EMPTY_CHARACTERS, EMPTY_SCREENS, EMPTY_VARIABLES } from '../../state/empty';
 import { newEntityId, useProjectStore } from '../../state/project';
 import { labelFor } from '../../state/templates';
 import { AssetPicker } from '../AssetPicker';
@@ -41,9 +42,13 @@ function NodeSpecificFields({ node }: { node: SceneNode }) {
   const updateNode = useProjectStore((s) => s.updateNode);
   const set = (patch: Partial<SceneNode>) => updateNode(node.id, patch);
 
-  const characters = useProjectStore(useShallow((s) => s.bundle?.characters.characters ?? []));
-  const variables = useProjectStore(useShallow((s) => s.bundle?.variables.variables ?? []));
-  const screens = useProjectStore(useShallow((s) => s.bundle?.screens ?? []));
+  const characters = useProjectStore(
+    useShallow((s) => s.bundle?.characters.characters ?? EMPTY_CHARACTERS),
+  );
+  const variables = useProjectStore(
+    useShallow((s) => s.bundle?.variables.variables ?? EMPTY_VARIABLES),
+  );
+  const screens = useProjectStore(useShallow((s) => s.bundle?.screens ?? EMPTY_SCREENS));
 
   switch (node.type) {
     case 'start':

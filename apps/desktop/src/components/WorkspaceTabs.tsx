@@ -5,6 +5,7 @@ import { type WorkspaceTab, useWorkspaceStore } from '../state/workspace';
 
 const TABS: Array<{ id: WorkspaceTab; label: string }> = [
   { id: 'canvas', label: 'Canvas' },
+  { id: 'preview', label: 'Preview' },
   { id: 'characters', label: 'Characters' },
   { id: 'variables', label: 'Variables' },
   { id: 'assets', label: 'Assets' },

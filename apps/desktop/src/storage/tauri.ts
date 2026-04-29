@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { ProjectStorage } from './types';
 
@@ -64,6 +64,21 @@ export class TauriStorage implements ProjectStorage {
       refs: [...refs],
     });
     return new Map(result);
+  }
+
+  resolveAssetUrl(rootedRef: string): string | null {
+    // `label` holds the absolute project root once a project is open.
+    if (this.label === '(no project)') return null;
+    // Tauri requires absolute paths; concat with normalised separator.
+    const sep = this.label.includes('\\') ? '\\' : '/';
+    const abs = this.label.endsWith(sep)
+      ? `${this.label}${rootedRef.split('/').join(sep)}`
+      : `${this.label}${sep}${rootedRef.split('/').join(sep)}`;
+    try {
+      return convertFileSrc(abs);
+    } catch {
+      return null;
+    }
   }
 
   async watchSpec(handler: (changedPaths: string[]) => void): Promise<() => void> {

@@ -83,6 +83,12 @@ export class MemoryStorage implements ProjectStorage {
     return () => {};
   }
 
+  resolveAssetUrl(_rootedRef: string): string | null {
+    // The in-memory backend has no real files to serve. The preview will
+    // render placeholder sprites instead.
+    return null;
+  }
+
   /** Test helper: snapshot of generated .rpy contents. */
   generatedFiles(): Map<string, string> {
     return new Map(this.generated);
