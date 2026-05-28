@@ -39,7 +39,14 @@
     "copyright": "Open-Code-RenPy-UI contributors",
     "publisher": "Open-Code-RenPy-UI",
     "homepage": "https://github.com/dante-singleton/open-code-renpy-ui",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
     "linux": {
       "appimage": {
         "bundleMediaFramework": false
