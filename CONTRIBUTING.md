@@ -144,7 +144,22 @@ whenever you change the emitter — see [`docs/codegen-reference.md`](./docs/cod
 
 Tags follow semver. `1.0.0` is the first stable cut. Each release bumps:
 
-1. `apps/desktop/package.json`
+1. Every `package.json` in the workspace (root + apps/* + packages/*)
 2. `apps/desktop/src-tauri/Cargo.toml` (`[package].version`)
 3. `apps/desktop/src-tauri/tauri.conf.json` (`version`)
-4. `CHANGELOG.md` (a new dated section under `## Unreleased`)
+4. `CHANGELOG.md` (a new dated section)
+
+Once those are committed and a `v*.*.*` tag is pushed,
+`.github/workflows/release.yml` builds installers in parallel on
+Linux / macOS / Windows and uploads them as assets on the matching
+GitHub Release:
+
+```bash
+# After version bumps + commit:
+git tag -a v1.2.3 -m "Release 1.2.3"
+git push origin main v1.2.3
+# Watch the Release workflow: https://github.com/<repo>/actions
+```
+
+The `NO_STRIP=true` workaround is set inside `release.yml` so AppImage
+builds don't fail on modern binutils.

@@ -35,6 +35,14 @@ pnpm generate fixtures/demo-cafe/spec
 cat fixtures/demo-cafe/spec/game/generated/scenes/cafe.rpy
 ```
 
+## Pre-built downloads
+
+Each tagged release publishes installers for Linux, macOS, and Windows
+on the [Releases page](https://github.com/dante-singleton/open-code-renpy-ui/releases).
+Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which
+builds in parallel on every platform and uploads installers as release
+assets.
+
 ---
 
 ## Documentation

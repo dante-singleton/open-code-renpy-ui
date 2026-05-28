@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Web-only checks (lint, typecheck, vitest, vite build).
+  # Pure TypeScript — running on a single OS is sufficient.
   web:
     name: Lint · Typecheck · Test · Build (web)
     runs-on: ubuntu-latest
@@ -42,3 +44,66 @@ jobs:
 
       - name: Build web bundle
         run: pnpm --filter @renpy-ui/desktop build
+
+  # Cross-platform Tauri build (smoke test, no bundling).
+  # Catches Rust / Tauri / system-library regressions on each OS for every PR.
+  # The full installer build only runs on tagged releases (see release.yml).
+  tauri-build:
+    name: Tauri build (${{ matrix.os }})
+    needs: web
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Tauri Linux system deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            libssl-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-${{ matrix.os }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ matrix.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web bundle
+        run: pnpm --filter @renpy-ui/desktop build
+
+      - name: Tauri compile (no bundle)
+        # `cargo build --release` is faster than `tauri build` and proves
+        # the crate compiles. The full bundle (.deb / .dmg / .msi) is built
+        # by release.yml on a v* tag.
+        working-directory: apps/desktop/src-tauri
+        run: cargo build --release
