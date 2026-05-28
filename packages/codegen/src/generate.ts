@@ -1,6 +1,7 @@
 import { emitCharacters } from './emitters/characters';
 import { emitManifest } from './emitters/manifest';
 import { emitScene } from './emitters/scene';
+import { emitScreen } from './emitters/screens';
 import { emitVariables } from './emitters/variables';
 import { buildSymbolTable } from './symbols';
 import type { GenerateResult, GeneratedFile, SpecBundle } from './types';
@@ -39,6 +40,16 @@ export function generate(bundle: SpecBundle): GenerateResult {
     files.push({
       path: `${genDir}/scenes/${scene.label}.rpy`,
       contents: emitScene(scene, sym),
+    });
+  }
+
+  const screens = [...bundle.screens].sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+  );
+  for (const screen of screens) {
+    files.push({
+      path: `${genDir}/screens/${screen.name}.rpy`,
+      contents: emitScreen(screen),
     });
   }
 

@@ -14,5 +14,6 @@ export { generate } from './generate';
 export { emitCharacters } from './emitters/characters';
 export { emitVariables } from './emitters/variables';
 export { emitScene } from './emitters/scene';
+export { emitScreen } from './emitters/screens';
 export { emitManifest } from './emitters/manifest';
 export { generatedHeader } from './utils/header';

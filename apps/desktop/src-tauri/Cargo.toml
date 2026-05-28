@@ -1,9 +1,12 @@
 [package]
 name = "renpy-ui-desktop"
-version = "0.0.0"
+version = "1.0.0"
 description = "Open-Code-RenPy-UI desktop shell"
 edition = "2021"
 rust-version = "1.77"
+license = "Apache-2.0"
+authors = ["Open-Code-RenPy-UI contributors"]
+repository = "https://github.com/dante-singleton/open-code-renpy-ui"
 
 [lib]
 name = "renpy_ui_desktop_lib"
@@ -13,7 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }

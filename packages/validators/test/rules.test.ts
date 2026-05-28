@@ -12,7 +12,9 @@ import {
   checkRelationshipCharacters,
   checkReservedIdentifiers,
   checkSceneTerminals,
+  checkScreenReferences,
   checkUniqueLabels,
+  checkUniqueScreenNames,
   checkUnreachableNodes,
   checkVariableDeclarations,
   validateBundle,
@@ -647,6 +649,126 @@ describe('validateBundleWithEnv', () => {
     });
     const diags = validateBundleWithEnv(b, { existingAssetFiles: new Set() });
     expect(diags.some((d) => d.code === 'MISSING_ASSET_FILE')).toBe(true);
+  });
+});
+
+describe('screen references', () => {
+  it('errors when a showScreen node points at an unknown screen id', () => {
+    const b = bundle({
+      screens: [
+        {
+          specVersion: '1.0.0',
+          id: 'sc1',
+          name: 'pause',
+          template: 'custom',
+          slots: {},
+          raw: '',
+        },
+      ],
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_show',
+              type: 'showScreen',
+              position: { x: 0, y: 0 },
+              screenId: 'ghost',
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_show' },
+            { id: 'e2', source: 'n_show', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    expect(checkScreenReferences(b).some((d) => d.code === 'UNKNOWN_SCREEN')).toBe(true);
+  });
+
+  it('passes when the screen exists', () => {
+    const b = bundle({
+      screens: [
+        {
+          specVersion: '1.0.0',
+          id: 'sc1',
+          name: 'pause',
+          template: 'custom',
+          slots: {},
+          raw: '',
+        },
+      ],
+      scenes: [
+        sceneShell({
+          nodes: [
+            { id: 'n_start', type: 'start', position: { x: 0, y: 0 } },
+            {
+              id: 'n_show',
+              type: 'showScreen',
+              position: { x: 0, y: 0 },
+              screenId: 'sc1',
+            },
+            { id: 'n_end', type: 'end', position: { x: 0, y: 0 } },
+          ],
+          edges: [
+            { id: 'e1', source: 'n_start', target: 'n_show' },
+            { id: 'e2', source: 'n_show', target: 'n_end' },
+          ],
+        }),
+      ],
+    });
+    expect(checkScreenReferences(b)).toHaveLength(0);
+  });
+});
+
+describe('unique screen names', () => {
+  it('flags duplicates', () => {
+    const b = bundle({
+      screens: [
+        {
+          specVersion: '1.0.0',
+          id: 'sc1',
+          name: 'pause',
+          template: 'custom',
+          slots: {},
+          raw: '',
+        },
+        {
+          specVersion: '1.0.0',
+          id: 'sc2',
+          name: 'pause',
+          template: 'custom',
+          slots: {},
+          raw: '',
+        },
+      ],
+    });
+    expect(checkUniqueScreenNames(b).some((d) => d.code === 'DUPLICATE_SCREEN_NAME')).toBe(true);
+  });
+});
+
+describe('screen widgets contribute to UNINDEXED_ASSET', () => {
+  it('flags unindexed image asset inside a screen widget', () => {
+    const b = bundle({
+      assets: { specVersion: '1.0.0', assets: [] },
+      screens: [
+        {
+          specVersion: '1.0.0',
+          id: 'sc1',
+          name: 'main_menu',
+          template: 'mainMenu',
+          slots: {
+            logo: { kind: 'image', asset: 'images/logo.png' },
+          },
+        },
+      ],
+    });
+    expect(
+      checkAssetReferencesIndexed(b).some(
+        (d) => d.code === 'UNINDEXED_ASSET' && d.location === 'sc1',
+      ),
+    ).toBe(true);
   });
 });
 

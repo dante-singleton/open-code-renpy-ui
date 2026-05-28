@@ -1,6 +1,7 @@
 {
   "name": "@renpy-ui/desktop",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +12,8 @@
     "test": "vitest run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "_comment_no_strip": "linuxdeploy ships an older `strip` that can't process .relr.dyn sections produced by modern binutils (Arch, Fedora 40+). Setting NO_STRIP=true bypasses it; AppImage size is unchanged in practice.",
+    "tauri:build": "NO_STRIP=true tauri build",
     "clean": "rimraf dist .turbo src-tauri/target"
   },
   "dependencies": {

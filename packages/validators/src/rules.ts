@@ -294,6 +294,21 @@ export function checkAssetReferencesIndexed(bundle: SpecBundle): Diagnostic[] {
       }
     }
   }
+  for (const screen of bundle.screens) {
+    for (const widget of Object.values(screen.slots)) {
+      for (const ref of assetRefsFromWidget(widget)) {
+        if (!known.has(ref)) {
+          out.push({
+            severity: 'warning',
+            code: 'UNINDEXED_ASSET',
+            message: `Screen "${screen.name}" references unindexed asset "${ref}"`,
+            source: `.renpy-ui/screens/${screen.name}.json`,
+            location: screen.id,
+          });
+        }
+      }
+    }
+  }
   return out;
 }
 
@@ -432,6 +447,72 @@ function assetRefsFromNode(node: import('@renpy-ui/spec').SceneNode): string[] {
 }
 
 /**
+ * Helper: collect every AssetRef from a ScreenWidget tree.
+ */
+function assetRefsFromWidget(widget: import('@renpy-ui/spec').ScreenWidget): string[] {
+  const out: string[] = [];
+  walk(widget);
+  return out;
+  function walk(w: import('@renpy-ui/spec').ScreenWidget): void {
+    if (w.kind === 'image') out.push(w.asset);
+    if (w.kind === 'frame' || w.kind === 'vbox' || w.kind === 'hbox') {
+      for (const c of w.children) walk(c);
+    }
+  }
+}
+
+/**
+ * Rule (M7): a screen referenced by a `showScreen` / `hideScreen` /
+ * `callScreen` node resolves to a screen spec in the project.
+ */
+export function checkScreenReferences(bundle: SpecBundle): Diagnostic[] {
+  const known = new Set(bundle.screens.map((s) => s.id));
+  const out: Diagnostic[] = [];
+  for (const scene of bundle.scenes) {
+    for (const node of scene.nodes) {
+      if (
+        (node.type === 'showScreen' || node.type === 'hideScreen' || node.type === 'callScreen') &&
+        node.screenId &&
+        !known.has(node.screenId)
+      ) {
+        out.push({
+          severity: 'error',
+          code: 'UNKNOWN_SCREEN',
+          message: `${node.type} references unknown screen id "${node.screenId}"`,
+          source: sceneSource(scene),
+          location: node.id,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Rule (M7): screen names are unique within the project.
+ */
+export function checkUniqueScreenNames(bundle: SpecBundle): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  const seen = new Map<string, string>();
+  for (const screen of bundle.screens) {
+    const prev = seen.get(screen.name);
+    const source = `.renpy-ui/screens/${screen.name}.json`;
+    if (prev) {
+      out.push({
+        severity: 'error',
+        code: 'DUPLICATE_SCREEN_NAME',
+        message: `Duplicate screen name "${screen.name}" (also defined in ${prev})`,
+        source,
+        location: screen.id,
+      });
+    } else {
+      seen.set(screen.name, source);
+    }
+  }
+  return out;
+}
+
+/**
  * Rule (M4): warn on nodes that aren't reachable from any entry point.
  *
  * Entry points include the scene's `entryNodeId` and every `LabelNode`. We
@@ -545,6 +626,8 @@ export const ALL_RULES = [
   checkRelationshipCharacters,
   checkAssetReferencesIndexed,
   checkCallCycles,
+  checkScreenReferences,
+  checkUniqueScreenNames,
 ] as const;
 
 /**

@@ -1,0 +1,7 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCREEN_PAUSE",
+  "name": "pause_menu",
+  "template": "custom",
+  "raw": "tag menu\n\nframe:\n    background \"#000000aa\"\n    padding (32, 32)\n    xalign 0.5\n    yalign 0.5\n\n    vbox:\n        spacing 12\n        text _(\"Paused\") size 48\n        textbutton _(\"Resume\") action Return()\n        textbutton _(\"Main Menu\") action MainMenu()\n        textbutton _(\"Quit\") action Quit(confirm=False)\n"
+}

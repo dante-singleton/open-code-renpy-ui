@@ -1,21 +1,42 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { QuickInsert } from './components/QuickInsert';
+import { ShortcutsHelp } from './components/ShortcutsHelp';
 import { StatusBar } from './components/StatusBar';
 import { TopBar } from './components/TopBar';
+import { Welcome } from './components/Welcome';
 import { WorkspaceTabs } from './components/WorkspaceTabs';
 import { useGlobalShortcuts } from './lib/useGlobalShortcuts';
-import { Canvas } from './panels/Canvas';
-import { CodeLens } from './panels/CodeLens';
-import { Inspector } from './panels/Inspector';
-import { Problems } from './panels/Problems';
-import { Sidebar } from './panels/Sidebar';
 import { useProjectStore } from './state/project';
 import { useWorkspaceStore } from './state/workspace';
 import { createStorage } from './storage';
-import { AssetsView } from './views/AssetsView';
-import { CharactersView } from './views/CharactersView';
-import { PreviewView } from './views/PreviewView';
-import { VariablesView } from './views/VariablesView';
+
+/**
+ * Tab views are lazy-loaded so the initial bundle stays small. The Canvas
+ * tab pulls in @xyflow/react (~150 KB) and the Preview tab pulls in
+ * @renpy-ui/preview/react; neither is needed before the user navigates
+ * to that surface.
+ *
+ * Each lazy chunk uses `Suspense` for fallback rendering. The loading
+ * fallback is intentionally tiny so it never flashes for cached chunks.
+ */
+const CanvasView = lazy(() =>
+  import('./views/CanvasView').then((m) => ({ default: m.CanvasView })),
+);
+const PreviewView = lazy(() =>
+  import('./views/PreviewView').then((m) => ({ default: m.PreviewView })),
+);
+const CharactersView = lazy(() =>
+  import('./views/CharactersView').then((m) => ({ default: m.CharactersView })),
+);
+const VariablesView = lazy(() =>
+  import('./views/VariablesView').then((m) => ({ default: m.VariablesView })),
+);
+const AssetsView = lazy(() =>
+  import('./views/AssetsView').then((m) => ({ default: m.AssetsView })),
+);
+const ScreensView = lazy(() =>
+  import('./views/ScreensView').then((m) => ({ default: m.ScreensView })),
+);
 
 export function App() {
   useGlobalShortcuts();
@@ -29,10 +50,7 @@ export function App() {
       void useProjectStore.getState().reloadProject();
     }
 
-    // After the first successful project load, start watching for external
-    // changes. The storage layer no-ops on backends that can't watch.
     void (async () => {
-      // Wait one tick so the initial reload has a chance to set the bundle.
       await Promise.resolve();
       try {
         unsubscribe = await storage.watchSpec(() => {
@@ -40,8 +58,6 @@ export function App() {
           if (state.dirty.size === 0) {
             void state.reloadProject();
           }
-          // If there are dirty buffers, leave them alone for now. A merge
-          // prompt is on the M8 polish list.
         });
       } catch {
         // Watching is best-effort.
@@ -57,31 +73,33 @@ export function App() {
     <div className="flex flex-col h-full bg-bg-0 text-fg relative">
       <TopBar />
       <WorkspaceTabs />
-      <main className="flex-1 min-h-0 grid grid-cols-[260px_1fr] gap-2 p-2">
-        <Sidebar />
-        {tab === 'canvas' ? (
-          <div className="grid grid-rows-[1fr_220px] gap-2 min-h-0">
-            <div className="grid grid-cols-[1fr_320px] gap-2 min-h-0">
-              <Canvas />
-              <Inspector />
-            </div>
-            <div className="grid grid-cols-[1fr_1fr] gap-2 min-h-0">
-              <Problems />
-              <CodeLens />
-            </div>
-          </div>
-        ) : tab === 'preview' ? (
-          <PreviewView />
-        ) : tab === 'characters' ? (
-          <CharactersView />
-        ) : tab === 'variables' ? (
-          <VariablesView />
-        ) : (
-          <AssetsView />
-        )}
+      <main className="flex-1 min-h-0 p-2">
+        <Suspense fallback={<TabLoading />}>
+          {tab === 'canvas' ? (
+            <CanvasView />
+          ) : tab === 'preview' ? (
+            <PreviewView />
+          ) : tab === 'characters' ? (
+            <CharactersView />
+          ) : tab === 'variables' ? (
+            <VariablesView />
+          ) : tab === 'assets' ? (
+            <AssetsView />
+          ) : (
+            <ScreensView />
+          )}
+        </Suspense>
       </main>
       <StatusBar />
       <QuickInsert />
+      <ShortcutsHelp />
+      <Welcome />
     </div>
+  );
+}
+
+function TabLoading() {
+  return (
+    <div className="flex items-center justify-center h-full text-xs text-fg-muted">Loading…</div>
   );
 }

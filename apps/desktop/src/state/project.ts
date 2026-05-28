@@ -8,6 +8,7 @@ import type {
   SceneEdge,
   SceneNode,
   SceneSpec,
+  ScreenSpec,
   Variable,
 } from '@renpy-ui/spec';
 import {
@@ -89,6 +90,9 @@ export interface ProjectState {
   upsertVariable(variable: Variable): void;
   removeVariable(variableId: string): void;
 
+  upsertScreen(screen: ScreenSpec): void;
+  removeScreen(screenId: string): void;
+
   upsertAsset(asset: Asset): void;
   removeAsset(assetId: string): void;
   importAssets(opts: { kindHint?: AssetKind; subkind?: AssetSubkind }): Promise<Asset[]>;
@@ -130,6 +134,7 @@ const partializeTemporal = (state: ProjectState): TemporalSlice => ({
 });
 
 const SCENE_FILE_PREFIX = '.renpy-ui/scenes/';
+const SCREEN_FILE_PREFIX = '.renpy-ui/screens/';
 const PROJECT_FILE = '.renpy-ui/project.json';
 const CHARACTERS_FILE = '.renpy-ui/characters.json';
 const VARIABLES_FILE = '.renpy-ui/variables.json';
@@ -137,6 +142,10 @@ const ASSETS_FILE = '.renpy-ui/assets.json';
 
 function sceneFile(label: string): string {
   return `${SCENE_FILE_PREFIX}${label}.json`;
+}
+
+function screenFile(name: string): string {
+  return `${SCREEN_FILE_PREFIX}${name}.json`;
 }
 
 function findScene(bundle: SpecBundle, sceneId: string): SceneSpec | undefined {
@@ -151,6 +160,17 @@ function syncManifestScenes(project: ProjectManifest, scenes: SceneSpec[]): Proj
   return {
     ...project,
     scenes: scenes.map((s) => ({ id: s.id, label: s.label, file: `scenes/${s.label}.json` })),
+  };
+}
+
+function syncManifestScreens(project: ProjectManifest, screens: ScreenSpec[]): ProjectManifest {
+  return {
+    ...project,
+    screens: screens.map((s) => ({
+      id: s.id,
+      name: s.name,
+      file: `screens/${s.name}.json`,
+    })),
   };
 }
 
@@ -412,6 +432,45 @@ export const useProjectStore: UseBoundStore<
         );
       },
 
+      upsertScreen(screen) {
+        set(
+          produce((s: ProjectState) => {
+            if (!s.bundle) return;
+            const idx = s.bundle.screens.findIndex((sc) => sc.id === screen.id);
+            const previous = idx === -1 ? null : (s.bundle.screens[idx] ?? null);
+            if (idx === -1) s.bundle.screens.push(screen);
+            else s.bundle.screens[idx] = screen;
+            // If the user renamed the screen, remove the old file and mark
+            // the new one dirty. Otherwise just dirty the current name.
+            if (previous && previous.name !== screen.name) {
+              markDirty(s, screenFile(previous.name));
+            }
+            markDirty(s, screenFile(screen.name));
+            markDirty(s, PROJECT_FILE);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
+          }),
+        );
+      },
+
+      removeScreen(screenId) {
+        set(
+          produce((s: ProjectState) => {
+            if (!s.bundle) return;
+            const removed = s.bundle.screens.find((sc) => sc.id === screenId);
+            s.bundle.screens = s.bundle.screens.filter((sc) => sc.id !== screenId);
+            if (removed) markDirty(s, screenFile(removed.name));
+            markDirty(s, PROJECT_FILE);
+            s.diagnostics = validateBundleWithEnv(s.bundle, {
+              existingAssetFiles: s.existingAssetFiles,
+              currentAssetHashes: s.currentAssetHashes,
+            });
+          }),
+        );
+      },
+
       upsertAsset(asset) {
         set(
           produce((s: ProjectState) => {
@@ -562,8 +621,12 @@ export const useProjectStore: UseBoundStore<
 
         set({ status: 'saving' });
         try {
-          // Make sure the project manifest's `scenes[]` matches reality.
-          const synced = syncManifestScenes(bundle.project, bundle.scenes);
+          // Make sure the project manifest's `scenes[]` and `screens[]`
+          // match reality before we persist + codegen.
+          const synced = syncManifestScreens(
+            syncManifestScenes(bundle.project, bundle.scenes),
+            bundle.screens,
+          );
           if (JSON.stringify(synced) !== JSON.stringify(bundle.project)) {
             set(
               produce((s: ProjectState) => {
@@ -630,6 +693,12 @@ async function persistDirty(
       const label = file.slice(SCENE_FILE_PREFIX.length, -'.json'.length);
       const scene = bundle.scenes.find((s) => s.label === label);
       if (scene) await storage.writeSpec(file, jsonString(scene));
+    } else if (file.startsWith(SCREEN_FILE_PREFIX)) {
+      const name = file.slice(SCREEN_FILE_PREFIX.length, -'.json'.length);
+      const screen = bundle.screens.find((sc) => sc.name === name);
+      if (screen) await storage.writeSpec(file, jsonString(screen));
+      // If we don't find the screen, the user removed/renamed it; skip
+      // writing. Stale on-disk files are pruned in M8 polish.
     }
   }
 }

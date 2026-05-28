@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Open-Code-RenPy-UI",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "identifier": "ai.opencode.renpy-ui",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -23,13 +23,32 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:; media-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:* http://localhost:*",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
     "category": "DeveloperTool",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"]
+    "shortDescription": "Spec-driven, node-based editor for Ren'Py visual novels.",
+    "longDescription": "Open-Code-RenPy-UI is a visual editor for Ren'Py games. Compose scenes on a node graph, manage characters, variables and assets, and emit deterministic .rpy code from a single source-of-truth spec.",
+    "copyright": "Open-Code-RenPy-UI contributors",
+    "publisher": "Open-Code-RenPy-UI",
+    "homepage": "https://github.com/dante-singleton/open-code-renpy-ui",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }

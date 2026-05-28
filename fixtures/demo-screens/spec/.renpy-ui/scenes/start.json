@@ -1,0 +1,21 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCENE_START",
+  "label": "start",
+  "title": "Start",
+  "entryNodeId": "n_start",
+  "nodes": [
+    { "id": "n_start", "type": "start", "position": { "x": 0, "y": 0 } },
+    {
+      "id": "n_say",
+      "type": "narration",
+      "position": { "x": 200, "y": 0 },
+      "text": "Demo screens project."
+    },
+    { "id": "n_end", "type": "end", "position": { "x": 400, "y": 0 } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n_start", "target": "n_say" },
+    { "id": "e2", "source": "n_say", "target": "n_end" }
+  ]
+}

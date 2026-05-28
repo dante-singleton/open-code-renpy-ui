@@ -9,6 +9,7 @@ const TABS: Array<{ id: WorkspaceTab; label: string }> = [
   { id: 'characters', label: 'Characters' },
   { id: 'variables', label: 'Variables' },
   { id: 'assets', label: 'Assets' },
+  { id: 'screens', label: 'Screens' },
 ];
 
 export function WorkspaceTabs() {
@@ -20,6 +21,7 @@ export function WorkspaceTabs() {
       characters: s.bundle?.characters.characters.length ?? 0,
       variables: s.bundle?.variables.variables.length ?? 0,
       assets: s.bundle?.assets.assets.length ?? 0,
+      screens: s.bundle?.screens.length ?? 0,
     })),
   );
 
@@ -38,7 +40,9 @@ export function WorkspaceTabs() {
               ? counts.variables
               : t.id === 'assets'
                 ? counts.assets
-                : null;
+                : t.id === 'screens'
+                  ? counts.screens
+                  : null;
         return (
           <button
             key={t.id}

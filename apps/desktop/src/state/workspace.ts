@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type WorkspaceTab = 'canvas' | 'preview' | 'characters' | 'variables' | 'assets';
+export type WorkspaceTab = 'canvas' | 'preview' | 'characters' | 'variables' | 'assets' | 'screens';
 
 interface WorkspaceState {
   tab: WorkspaceTab;

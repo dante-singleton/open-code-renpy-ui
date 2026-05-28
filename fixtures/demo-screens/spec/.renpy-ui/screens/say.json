@@ -1,0 +1,32 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCREEN_SAY",
+  "name": "say",
+  "template": "say",
+  "slots": {
+    "window": {
+      "kind": "frame",
+      "background": "#0b0b10cc",
+      "padding": 16,
+      "children": [
+        {
+          "kind": "vbox",
+          "spacing": 6,
+          "children": [
+            {
+              "kind": "text",
+              "text": "[who]",
+              "size": 18,
+              "color": "#FF7A1A"
+            },
+            {
+              "kind": "text",
+              "text": "[what]",
+              "size": 22
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

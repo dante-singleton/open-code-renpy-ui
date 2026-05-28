@@ -1,0 +1,35 @@
+{
+  "specVersion": "1.0.0",
+  "id": "01HYZSCREEN_MAIN",
+  "name": "main_menu",
+  "template": "mainMenu",
+  "slots": {
+    "logo": {
+      "kind": "text",
+      "text": "Demo Screens",
+      "size": 64,
+      "color": "#FF7A1A"
+    },
+    "menuButtons": {
+      "kind": "vbox",
+      "spacing": 12,
+      "children": [
+        {
+          "kind": "button",
+          "text": "Begin",
+          "action": "Start()"
+        },
+        {
+          "kind": "button",
+          "text": "Load Game",
+          "action": "ShowMenu(\"load\")"
+        },
+        {
+          "kind": "button",
+          "text": "Quit",
+          "action": "Quit(confirm=False)"
+        }
+      ]
+    }
+  }
+}
