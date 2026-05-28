@@ -4,6 +4,26 @@ All notable changes to Open-Code-RenPy-UI are tracked here. The format
 follows [Keep a Changelog](https://keepachangelog.com/) and this project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.0.1 — 2026-05-28
+
+Patch release validating the cross-platform release automation.
+No source changes to the editor itself.
+
+### CI
+- Added `.github/workflows/release.yml` to auto-build Tauri installers on
+  Linux, macOS, and Windows whenever a `v*.*.*` tag is pushed, and upload
+  them as assets on the matching GitHub Release.
+- Added per-PR Tauri compile matrix to `ci.yml` so cross-platform
+  regressions surface in PRs rather than at release time.
+- Fixed initial CI failures: dropped redundant pnpm version pin (was
+  conflicting with `package.json#packageManager`), added missing
+  `icon.ico` / `icon.icns` so Windows / macOS builds get the right
+  embedded resources, bumped Node 20 to 22 (current LTS).
+
+### Tooling
+- Generated proper desktop icon set via `pnpm tauri icon`. Pruned unused
+  mobile (Android, iOS) and Windows Store tile variants.
+
 ## 1.0.0 — 2026-05-07
 
 The first stable release. Closes the loop on every milestone in the
